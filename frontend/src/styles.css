@@ -2280,6 +2280,228 @@ button {
   animation: quick-spin 750ms linear infinite;
 }
 
+.loans-page-heading {
+  margin-bottom: 14px;
+}
+
+.portfolio-summary {
+  padding: 19px;
+  border: 1px solid rgba(80, 255, 154, 0.25);
+  border-radius: 19px;
+  background: linear-gradient(145deg, rgba(80, 255, 154, 0.11), transparent 58%), var(--surface);
+}
+
+.portfolio-summary-total {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.portfolio-summary-total span,
+.portfolio-summary-grid span,
+.portfolio-loan-balance span,
+.portfolio-loan-breakdown span {
+  color: var(--muted);
+  font-size: 0.68rem;
+}
+
+.portfolio-summary-total > strong {
+  font-size: 2rem;
+  letter-spacing: -0.045em;
+}
+
+.portfolio-summary-total small {
+  color: var(--muted);
+  font-size: 0.65rem;
+}
+
+.portfolio-summary-grid {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.portfolio-summary-grid > div {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.portfolio-summary-grid strong {
+  overflow: hidden;
+  font-size: 0.85rem;
+  text-overflow: ellipsis;
+}
+
+.loans-search {
+  margin-top: 13px;
+}
+
+.loan-filter-tabs {
+  margin: 11px 0 13px;
+  padding: 4px;
+  border: 1px solid var(--border);
+  border-radius: 13px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 4px;
+  background: var(--surface);
+}
+
+.loan-filter-tabs button {
+  min-height: 40px;
+  padding: 6px 7px;
+  border: 0;
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  color: var(--muted);
+  background: transparent;
+  font-size: 0.69rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.loan-filter-tabs button strong {
+  min-width: 19px;
+  height: 19px;
+  padding: 0 5px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  color: var(--text);
+  background: var(--surface-soft);
+  font-size: 0.62rem;
+}
+
+.loan-filter-tabs button.active {
+  color: #041008;
+  background: var(--plasma);
+}
+
+.loan-filter-tabs button.active strong {
+  color: var(--plasma);
+  background: #07100c;
+}
+
+.portfolio-loan-list {
+  display: grid;
+  gap: 11px;
+}
+
+.portfolio-loan-card {
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 17px;
+  background: var(--surface);
+}
+
+.portfolio-loan-card.written_off {
+  border-color: rgba(255, 107, 117, 0.23);
+}
+
+.portfolio-loan-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.portfolio-loan-heading > div {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.portfolio-loan-heading > div > strong {
+  overflow: hidden;
+  font-size: 0.92rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.portfolio-loan-heading small {
+  color: var(--muted);
+  font-size: 0.66rem;
+}
+
+.portfolio-loan-balance {
+  margin-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.portfolio-loan-balance strong {
+  font-size: 1.7rem;
+  letter-spacing: -0.04em;
+}
+
+.portfolio-loan-breakdown {
+  margin-top: 12px;
+  padding: 11px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  background: #07100c;
+}
+
+.portfolio-loan-breakdown > div {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.portfolio-loan-breakdown strong {
+  overflow: hidden;
+  font-size: 0.74rem;
+  text-overflow: ellipsis;
+}
+
+.portfolio-closed-details {
+  margin-top: 12px;
+  padding: 11px 12px;
+  border: 1px solid var(--border);
+  border-radius: 11px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  color: var(--muted);
+  background: #07100c;
+  font-size: 0.68rem;
+  line-height: 1.4;
+}
+
+.portfolio-closed-details strong {
+  color: var(--text);
+}
+
+.portfolio-collateral {
+  margin: 11px 0 0;
+  padding: 9px 11px;
+  border-left: 2px solid rgba(80, 255, 154, 0.4);
+  color: #b9c9c0;
+  background: var(--plasma-soft);
+  font-size: 0.68rem;
+  line-height: 1.45;
+}
+
+.portfolio-collateral span {
+  margin-right: 6px;
+  color: var(--plasma);
+  font-weight: 800;
+}
+
 @keyframes quick-spin {
   to { transform: rotate(360deg); }
 }
