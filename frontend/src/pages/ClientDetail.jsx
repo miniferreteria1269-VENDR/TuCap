@@ -182,6 +182,7 @@ function ClientDetail({ client, onBack, onClientUpdated }) {
             setDetailLoan(null);
             setPaymentLoan(selectedLoan);
           }}
+          onMutated={refreshPortfolio}
         />
       )}
     </section>
