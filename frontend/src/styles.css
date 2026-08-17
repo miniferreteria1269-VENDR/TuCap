@@ -259,6 +259,201 @@ button {
   margin-top: 13px;
 }
 
+.period-report {
+  overflow: hidden;
+}
+
+.period-range {
+  max-width: 140px;
+  color: var(--muted);
+  font-size: 0.62rem;
+  line-height: 1.35;
+  text-align: right;
+}
+
+.period-presets {
+  margin-top: 13px;
+  padding-bottom: 4px;
+  display: flex;
+  gap: 7px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.period-presets::-webkit-scrollbar {
+  display: none;
+}
+
+.period-presets button {
+  min-height: 34px;
+  padding: 0 11px;
+  flex: 0 0 auto;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--muted);
+  background: #07100c;
+  font-size: 0.67rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.period-presets button.active {
+  border-color: rgba(80, 255, 154, 0.38);
+  color: var(--plasma);
+  background: var(--plasma-soft);
+}
+
+.custom-period {
+  margin-top: 10px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.custom-period label {
+  display: grid;
+  gap: 5px;
+}
+
+.custom-period span {
+  color: var(--muted);
+  font-size: 0.64rem;
+}
+
+.custom-period input {
+  width: 100%;
+  height: 40px;
+  padding: 0 9px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  outline: 0;
+  color: var(--text);
+  background: #07100c;
+  font-size: 0.72rem;
+}
+
+.period-loading {
+  min-height: 190px;
+  display: grid;
+  place-items: center;
+  color: var(--muted);
+  font-size: 0.72rem;
+}
+
+.period-collection-hero {
+  margin-top: 12px;
+  padding: 15px;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 13px;
+  border: 1px solid rgba(80, 255, 154, 0.25);
+  border-radius: 14px;
+  background: linear-gradient(145deg, var(--plasma-soft), #07100c);
+}
+
+.period-collection-hero > div {
+  display: grid;
+  gap: 5px;
+}
+
+.period-collection-hero span,
+.period-collection-hero dt,
+.period-metric-grid span,
+.period-metric-grid small,
+.period-result span,
+.period-result small,
+.period-note {
+  color: var(--muted);
+  font-size: 0.64rem;
+}
+
+.period-collection-hero > div strong {
+  color: var(--plasma);
+  font-size: 1.45rem;
+  letter-spacing: -0.04em;
+}
+
+.period-collection-hero dl,
+.period-collection-hero dl div {
+  margin: 0;
+}
+
+.period-collection-hero dl {
+  display: grid;
+  gap: 7px;
+}
+
+.period-collection-hero dl div {
+  display: grid;
+  justify-items: end;
+  gap: 2px;
+}
+
+.period-collection-hero dd {
+  margin: 0;
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+
+.period-metric-grid {
+  margin-top: 9px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.period-metric-grid article {
+  min-height: 88px;
+  padding: 11px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: #07100c;
+}
+
+.period-metric-grid article strong {
+  font-size: 0.86rem;
+}
+
+.period-result {
+  margin-top: 9px;
+  padding: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 13px;
+  border: 1px solid rgba(80, 255, 154, 0.25);
+  border-radius: 12px;
+  background: var(--plasma-soft);
+}
+
+.period-result.loss {
+  border-color: rgba(255, 107, 117, 0.28);
+  background: rgba(255, 107, 117, 0.07);
+}
+
+.period-result > div {
+  display: grid;
+  gap: 4px;
+}
+
+.period-result > strong {
+  color: var(--plasma);
+  font-size: 1rem;
+  text-align: right;
+}
+
+.period-result.loss > strong {
+  color: #ff9ca4;
+}
+
+.period-note {
+  margin: 9px 2px 0;
+  line-height: 1.4;
+}
+
 .metric-card {
   min-height: 128px;
   padding: 17px;
