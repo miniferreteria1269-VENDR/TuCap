@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-import { createLoan, getBorrower, getCapitalSummary, getLoans } from "../api";
+import { createLoan, getBorrower, getBorrowerPerformance, getCapitalSummary, getLoans } from "../api";
 import LoanDetailModal from "../components/LoanDetailModal";
 import NewLoanModal from "../components/NewLoanModal";
 import ReceivePaymentModal from "../components/ReceivePaymentModal";
@@ -30,25 +30,29 @@ function ClientDetail({ client, onBack, onClientUpdated }) {
   const [showLoanForm, setShowLoanForm] = useState(false);
   const [paymentLoan, setPaymentLoan] = useState(null);
   const [detailLoan, setDetailLoan] = useState(null);
+  const [performance, setPerformance] = useState(null);
 
   const refreshPortfolio = async () => {
-    const [loanRows, capital, refreshedClient] = await Promise.all([
+    const [loanRows, capital, refreshedClient, refreshedPerformance] = await Promise.all([
       getLoans(client.id),
       getCapitalSummary(),
       getBorrower(client.id),
+      getBorrowerPerformance(client.id),
     ]);
     setLoans(loanRows);
     setCapitalOnHand(capital.capital_on_hand);
+    setPerformance(refreshedPerformance);
     onClientUpdated(refreshedClient);
   };
 
   useEffect(() => {
     let cancelled = false;
-    Promise.all([getLoans(client.id), getCapitalSummary()])
-      .then(([loanRows, capital]) => {
+    Promise.all([getLoans(client.id), getCapitalSummary(), getBorrowerPerformance(client.id)])
+      .then(([loanRows, capital, borrowerPerformance]) => {
         if (!cancelled) {
           setLoans(loanRows);
           setCapitalOnHand(capital.capital_on_hand);
+          setPerformance(borrowerPerformance);
         }
       })
       .catch((error) => {
@@ -103,6 +107,37 @@ function ClientDetail({ client, onBack, onClientUpdated }) {
       </div>
 
       <button className="primary-button full-action" type="button" onClick={() => setShowLoanForm(true)}>Crear nuevo préstamo</button>
+
+      {performance && performance.total_loans > 0 && (
+        <section className={`borrower-performance ${performance.economic_outcome}`}>
+          <div className="borrower-performance-heading">
+            <div><p className="eyebrow">Historial del cliente</p><h3>Desempeño como prestatario</h3></div>
+            <span>{performance.paid_loans} de {performance.paid_loans + performance.written_off_loans} cerrados pagados</span>
+          </div>
+
+          <div className="borrower-result">
+            <div><span>Resultado en préstamos cerrados</span><small>{performance.economic_outcome === "no_closed_loans" ? "Aún no hay préstamos cerrados" : `${Number(performance.completion_rate).toLocaleString("es-SV")}% de cumplimiento contractual`}</small></div>
+            <strong>{money.format(performance.closed_economic_result)}</strong>
+          </div>
+
+          <div className="borrower-performance-grid">
+            <div><span>Prestado histórico</span><strong>{money.format(performance.total_principal_lent)}</strong></div>
+            <div><span>Recuperado histórico</span><strong>{money.format(performance.total_recovered)}</strong></div>
+            <div><span>Interés cobrado</span><strong>{money.format(performance.total_interest_collected)}</strong></div>
+            <div><span>Exposición actual</span><strong>{money.format(performance.active_principal_exposure)}</strong></div>
+          </div>
+
+          <div className="borrower-history-strip">
+            <div><strong>{performance.paid_loans}</strong><span>Pagados</span></div>
+            <div><strong>{performance.written_off_loans}</strong><span>Castigados</span></div>
+            <div><strong>{performance.late_payment_count}</strong><span>Atrasos</span></div>
+            <div><strong>{performance.average_closed_duration_days}</strong><span>Días promedio</span></div>
+          </div>
+
+          {performance.economic_outcome !== "no_closed_loans" && <div className="borrower-performance-footer"><span>Resultado mensual promedio</span><strong>{money.format(performance.average_monthly_result)}</strong></div>}
+          <p className="borrower-judgment-note">TuCap resume el historial; la decisión de volver a prestar permanece bajo criterio del prestamista.</p>
+        </section>
+      )}
 
       <section className="detail-section">
         <div className="section-heading">
