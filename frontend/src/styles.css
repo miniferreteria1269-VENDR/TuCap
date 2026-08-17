@@ -939,6 +939,16 @@ button {
   text-transform: uppercase;
 }
 
+.status-pill.paid {
+  color: #b9c9c0;
+  background: var(--surface-soft);
+}
+
+.status-pill.written_off {
+  color: #ff9ca4;
+  background: rgba(255, 107, 117, 0.1);
+}
+
 .loan-card-details {
   margin-top: 13px;
   padding-top: 12px;
@@ -958,6 +968,168 @@ button {
 .loan-card-details strong {
   color: var(--text);
   text-align: right;
+}
+
+.receive-payment-button {
+  width: 100%;
+  min-height: 40px;
+  margin-top: 13px;
+  border: 1px solid rgba(80, 255, 154, 0.32);
+  border-radius: 11px;
+  color: var(--plasma);
+  background: var(--plasma-soft);
+  font-size: 0.76rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.payment-balances {
+  margin: 0 0 15px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 9px;
+}
+
+.payment-balances article {
+  min-height: 90px;
+  padding: 13px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  border: 1px solid var(--border);
+  border-radius: 13px;
+  background: #07100c;
+}
+
+.payment-balances span {
+  color: var(--muted);
+  font-size: 0.69rem;
+}
+
+.payment-balances strong {
+  font-size: 1.05rem;
+}
+
+.allocation-status {
+  margin: 0 0 13px;
+  padding: 10px 12px;
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--muted);
+  background: var(--surface-raised);
+  font-size: 0.7rem;
+}
+
+.allocation-status.complete {
+  border-color: rgba(80, 255, 154, 0.28);
+  color: var(--plasma);
+  background: var(--plasma-soft);
+}
+
+.inline-allocation-error {
+  margin: -4px 0 13px;
+  color: #ff9ca4;
+  font-size: 0.68rem;
+  line-height: 1.4;
+}
+
+.payment-receipt {
+  padding-top: 27px;
+  text-align: center;
+}
+
+.receipt-check {
+  width: 55px;
+  height: 55px;
+  margin: 0 auto 15px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  color: #031008;
+  background: var(--plasma);
+  box-shadow: 0 0 25px rgba(80, 255, 154, 0.3);
+  font-size: 1.6rem;
+  font-weight: 900;
+}
+
+.payment-receipt h2 {
+  margin: 5px 0 0;
+  font-size: 2.4rem;
+  letter-spacing: -0.055em;
+}
+
+.receipt-client {
+  margin: 5px 0 20px;
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.receipt-allocation,
+.recalculated-balance {
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: #07100c;
+  text-align: left;
+}
+
+.receipt-allocation {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.receipt-allocation > div,
+.recalculated-balance > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.receipt-allocation > div {
+  flex-direction: column;
+  gap: 4px;
+}
+
+.receipt-allocation span,
+.recalculated-balance span {
+  color: var(--muted);
+  font-size: 0.69rem;
+}
+
+.receipt-allocation strong {
+  font-size: 1rem;
+}
+
+.recalculated-balance {
+  margin-top: 10px;
+}
+
+.recalculated-balance > .eyebrow {
+  margin-bottom: 9px;
+}
+
+.recalculated-balance > div {
+  padding: 7px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.recalculated-balance > div:last-child {
+  border-bottom: 0;
+}
+
+.paid-off-message {
+  margin: 11px 0 0;
+  padding: 10px;
+  border: 1px solid rgba(80, 255, 154, 0.28);
+  border-radius: 10px;
+  color: var(--plasma);
+  background: var(--plasma-soft);
+  font-size: 0.72rem;
+  font-weight: 800;
 }
 
 .floating-action {
