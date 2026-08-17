@@ -3,7 +3,7 @@ import uuid
 from datetime import date, datetime, timezone
 from decimal import Decimal
 
-from sqlalchemy import Date, DateTime, Enum, ForeignKey, Index, Numeric, String, Text
+from sqlalchemy import Boolean, Date, DateTime, Enum, ForeignKey, Index, Integer, Numeric, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .database import Base
@@ -47,6 +47,34 @@ class Tenant(Base):
     currency: Mapped[str] = mapped_column(String(3), default="USD", nullable=False)
     timezone_name: Mapped[str] = mapped_column(String(64), default="America/El_Salvador", nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, nullable=False)
+
+
+class TenantIdentifier(Base):
+    """Stable human-facing tenant number, separate from the security-sensitive UUID."""
+
+    __tablename__ = "tenant_identifiers"
+
+    tenant_id: Mapped[str] = mapped_column(ForeignKey("tenants.id"), primary_key=True)
+    tenant_number: Mapped[int] = mapped_column(Integer, unique=True, index=True, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, nullable=False)
+
+
+class User(Base):
+    __tablename__ = "users"
+    __table_args__ = (Index("ux_users_email_normalized", "email_normalized", unique=True),)
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uuid_string)
+    tenant_id: Mapped[str] = mapped_column(ForeignKey("tenants.id"), index=True, nullable=False)
+    email: Mapped[str] = mapped_column(String(254), nullable=False)
+    email_normalized: Mapped[str] = mapped_column(String(254), nullable=False)
+    full_name: Mapped[str] = mapped_column(String(160), nullable=False)
+    password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    disclaimer_accepted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utc_now, onupdate=utc_now, nullable=False
+    )
 
 
 class Borrower(Base):
@@ -148,4 +176,3 @@ class CapitalLedgerEntry(Base):
     occurred_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     notes: Mapped[str | None] = mapped_column(Text)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, nullable=False)
-
