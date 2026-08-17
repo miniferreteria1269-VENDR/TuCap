@@ -18,6 +18,23 @@ from ..schemas import PaymentCreate
 from .interest import add_month, calculate_monthly_interest, money
 
 
+def post_initial_interest(db: Session, loan: Loan) -> Decimal:
+    """Charge the first simple-interest cycle when the loan is disbursed."""
+    amount = calculate_monthly_interest(loan.original_principal, loan.monthly_interest_rate)
+    loan.accrued_interest = amount
+    db.add(
+        InterestAccrual(
+            tenant_id=loan.tenant_id,
+            loan_id=loan.id,
+            cycle_date=loan.start_date,
+            principal_basis=loan.original_principal,
+            monthly_rate=loan.monthly_interest_rate,
+            amount=amount,
+        )
+    )
+    return amount
+
+
 def accrue_due_interest(db: Session, loan: Loan, through_date: date) -> Decimal:
     """Post one auditable simple-interest entry for every completed monthly cycle."""
     total_added = Decimal("0.00")
