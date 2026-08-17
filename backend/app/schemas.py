@@ -33,6 +33,29 @@ class BorrowerSummary(BorrowerRead):
     accrued_interest: Decimal = Decimal("0.00")
 
 
+class BorrowerPerformanceRead(BaseModel):
+    borrower_id: str
+    total_loans: int
+    active_loans: int
+    paid_loans: int
+    written_off_loans: int
+    total_principal_lent: Decimal
+    active_principal_exposure: Decimal
+    active_interest_receivable: Decimal
+    total_principal_collected: Decimal
+    total_interest_collected: Decimal
+    collateral_recovered: Decimal
+    total_recovered: Decimal
+    closed_principal_lent: Decimal
+    closed_total_recovered: Decimal
+    closed_economic_result: Decimal
+    economic_outcome: str
+    completion_rate: Decimal
+    late_payment_count: int
+    average_closed_duration_days: int
+    average_monthly_result: Decimal
+
+
 class LoanCreate(BaseModel):
     borrower_id: str
     original_principal: Decimal = Field(gt=0)
