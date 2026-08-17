@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import RedirectResponse
 
 from .config import get_settings
 from .database import Base, SessionLocal, engine
@@ -36,3 +37,8 @@ def create_tables() -> None:
 @app.get("/api/health", response_model=HealthResponse)
 def health() -> HealthResponse:
     return HealthResponse(status="ok", service=settings.app_name)
+
+
+@app.get("/", include_in_schema=False)
+def api_index() -> RedirectResponse:
+    return RedirectResponse(url="/docs")
