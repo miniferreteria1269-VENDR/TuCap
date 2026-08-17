@@ -1,23 +1,59 @@
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000/api";
-const TENANT_ID =
-  import.meta.env.VITE_TENANT_ID || "00000000-0000-0000-0000-000000000001";
+const TOKEN_KEY = "tucap_access_token";
+
+export function getAccessToken() {
+  return localStorage.getItem(TOKEN_KEY);
+}
+
+export function setAccessToken(token) {
+  localStorage.setItem(TOKEN_KEY, token);
+}
+
+export function clearAccessToken() {
+  localStorage.removeItem(TOKEN_KEY);
+}
 
 async function request(path, options = {}) {
+  const { authenticated = true, ...fetchOptions } = options;
+  const token = getAccessToken();
   const response = await fetch(`${API_URL}${path}`, {
-    ...options,
+    ...fetchOptions,
     headers: {
       "Content-Type": "application/json",
-      "X-Tenant-ID": TENANT_ID,
-      ...options.headers,
+      ...(authenticated && token ? { Authorization: `Bearer ${token}` } : {}),
+      ...fetchOptions.headers,
     },
   });
 
   if (!response.ok) {
     const body = await response.json().catch(() => null);
+    if (response.status === 401 && authenticated) {
+      clearAccessToken();
+      window.dispatchEvent(new Event("tucap:unauthorized"));
+    }
     throw new Error(body?.detail || "No se pudo completar la solicitud.");
   }
 
   return response.json();
+}
+
+export function login(email, password) {
+  return request("/auth/login", {
+    method: "POST",
+    authenticated: false,
+    body: JSON.stringify({ email, password }),
+  });
+}
+
+export function getCurrentUser() {
+  return request("/auth/me");
+}
+
+export function acceptDisclaimer() {
+  return request("/auth/accept-disclaimer", {
+    method: "POST",
+    body: JSON.stringify({ accepted: true }),
+  });
 }
 
 export function getBorrowers() {
