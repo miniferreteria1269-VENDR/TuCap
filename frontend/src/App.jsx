@@ -14,7 +14,7 @@ import Dashboard from "./pages/Dashboard";
 import DisclaimerPage from "./pages/DisclaimerPage";
 import LoginPage from "./pages/LoginPage";
 import LoansPage from "./pages/LoansPage";
-import PlaceholderPage from "./pages/PlaceholderPage";
+import MorePage from "./pages/MorePage";
 
 function initials(name) {
   return name.split(/\s+/).slice(0, 2).map((part) => part[0]).join("").toUpperCase();
@@ -31,6 +31,7 @@ function App() {
   const [quickAction, setQuickAction] = useState(null);
   const [dataVersion, setDataVersion] = useState(0);
   const [actionNotice, setActionNotice] = useState("");
+  const [dashboardFocus, setDashboardFocus] = useState(null);
 
   const lockSession = useCallback((notice = "") => {
     clearAccessToken();
@@ -104,6 +105,16 @@ function App() {
     setActionNotice(notice);
   };
 
+  const changePage = (page) => {
+    setDashboardFocus(null);
+    setActivePage(page);
+  };
+
+  const openDashboardSection = (sectionId) => {
+    setDashboardFocus(sectionId);
+    setActivePage("dashboard");
+  };
+
   if (checkingSession) {
     return <main className="auth-shell"><div className="session-loader"><span className="brand-mark">T</span><p>Protegiendo tu cartera…</p></div></main>;
   }
@@ -142,10 +153,10 @@ function App() {
       </header>
 
       <main>
-        {activePage === "dashboard" && <Dashboard key={`dashboard-${dataVersion}`} />}
+        {activePage === "dashboard" && <Dashboard focusTarget={dashboardFocus} key={`dashboard-${dataVersion}`} />}
         {activePage === "borrowers" && <ClientsPage key={`borrowers-${dataVersion}`} />}
         {activePage === "loans" && <LoansPage key={`loans-${dataVersion}`} onNewLoan={() => setQuickAction("new-loan")} />}
-        {activePage === "more" && <PlaceholderPage page={activePage} />}
+        {activePage === "more" && <MorePage key={`more-${dataVersion}`} onLogout={logout} onOpenDashboard={openDashboardSection} onQuickAction={setQuickAction} user={user} />}
       </main>
 
       {actionNotice && <div className="action-toast" role="status">✓ {actionNotice}</div>}
@@ -156,7 +167,7 @@ function App() {
         onClick={() => setQuickAction((current) => current ? null : "menu")}
         type="button"
       >+</button>
-      <BottomNav active={activePage} onChange={setActivePage} />
+      <BottomNav active={activePage} onChange={changePage} />
       {quickAction && (
         <QuickActions
           initialAction={quickAction === "menu" ? null : quickAction}
