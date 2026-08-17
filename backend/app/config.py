@@ -10,6 +10,11 @@ class Settings(BaseSettings):
     cors_origins: str = "http://localhost:5173,https://tu-cap.vercel.app"
     bootstrap_tenant_id: str = "00000000-0000-0000-0000-000000000001"
     bootstrap_tenant_name: str = "TuCap Pilot"
+    bootstrap_admin_email: str | None = None
+    bootstrap_admin_password: str | None = None
+    bootstrap_admin_name: str = "Administrador"
+    jwt_secret: str | None = None
+    jwt_expire_minutes: int = 720
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
