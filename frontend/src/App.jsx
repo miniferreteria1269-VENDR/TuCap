@@ -13,6 +13,7 @@ import ClientsPage from "./pages/ClientsPage";
 import Dashboard from "./pages/Dashboard";
 import DisclaimerPage from "./pages/DisclaimerPage";
 import LoginPage from "./pages/LoginPage";
+import LoansPage from "./pages/LoansPage";
 import PlaceholderPage from "./pages/PlaceholderPage";
 
 function initials(name) {
@@ -27,7 +28,7 @@ function App() {
   const [checkingSession, setCheckingSession] = useState(() => Boolean(getAccessToken()));
   const [showAccount, setShowAccount] = useState(false);
   const [sessionNotice, setSessionNotice] = useState("");
-  const [showQuickActions, setShowQuickActions] = useState(false);
+  const [quickAction, setQuickAction] = useState(null);
   const [dataVersion, setDataVersion] = useState(0);
   const [actionNotice, setActionNotice] = useState("");
 
@@ -35,6 +36,7 @@ function App() {
     clearAccessToken();
     setUser(null);
     setShowAccount(false);
+    setQuickAction(null);
     setActivePage("dashboard");
     setSessionNotice(notice);
   }, []);
@@ -97,7 +99,7 @@ function App() {
   }, [actionNotice]);
 
   const completeQuickAction = (notice) => {
-    setShowQuickActions(false);
+    setQuickAction(null);
     setDataVersion((current) => current + 1);
     setActionNotice(notice);
   };
@@ -142,23 +144,23 @@ function App() {
       <main>
         {activePage === "dashboard" && <Dashboard key={`dashboard-${dataVersion}`} />}
         {activePage === "borrowers" && <ClientsPage key={`borrowers-${dataVersion}`} />}
-        {activePage !== "dashboard" && activePage !== "borrowers" && (
-          <PlaceholderPage page={activePage} />
-        )}
+        {activePage === "loans" && <LoansPage key={`loans-${dataVersion}`} onNewLoan={() => setQuickAction("new-loan")} />}
+        {activePage === "more" && <PlaceholderPage page={activePage} />}
       </main>
 
       {actionNotice && <div className="action-toast" role="status">✓ {actionNotice}</div>}
       <button
-        aria-expanded={showQuickActions}
-        aria-label={showQuickActions ? "Cerrar acciones rápidas" : "Abrir acciones rápidas"}
-        className={showQuickActions ? "floating-action open" : "floating-action"}
-        onClick={() => setShowQuickActions((current) => !current)}
+        aria-expanded={Boolean(quickAction)}
+        aria-label={quickAction ? "Cerrar acciones rápidas" : "Abrir acciones rápidas"}
+        className={quickAction ? "floating-action open" : "floating-action"}
+        onClick={() => setQuickAction((current) => current ? null : "menu")}
         type="button"
       >+</button>
       <BottomNav active={activePage} onChange={setActivePage} />
-      {showQuickActions && (
+      {quickAction && (
         <QuickActions
-          onClose={() => setShowQuickActions(false)}
+          initialAction={quickAction === "menu" ? null : quickAction}
+          onClose={() => setQuickAction(null)}
           onCompleted={completeQuickAction}
         />
       )}
