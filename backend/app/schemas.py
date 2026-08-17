@@ -4,7 +4,7 @@ from typing import Annotated
 
 from pydantic import AliasChoices, BaseModel, ConfigDict, Field, model_validator
 
-from .models import BorrowerStatus, LoanStatus
+from .models import BorrowerStatus, LoanClosureReason, LoanStatus
 
 
 class BorrowerCreate(BaseModel):
@@ -124,12 +124,49 @@ class InterestAccrualRead(BaseModel):
     created_at: datetime
 
 
+class LoanPerformanceRead(BaseModel):
+    closure_reason: LoanClosureReason
+    closed_at: datetime
+    contract_fulfilled: bool
+    principal_shortfall: Decimal
+    interest_shortfall: Decimal
+    payments_collected: Decimal
+    collateral_recovered: Decimal
+    total_recovered: Decimal
+    economic_result: Decimal
+    economic_outcome: str
+    duration_days: int
+    billed_months: int
+    average_monthly_result: Decimal
+    late_payment_count: int
+    notes: str | None
+
+
 class LoanDetailRead(LoanRead):
     payments: list[PaymentRead]
     interest_accruals: list[InterestAccrualRead]
     total_interest_collected: Decimal
     total_principal_collected: Decimal
     total_collected: Decimal
+    performance: LoanPerformanceRead | None = None
+
+
+class LoanWriteOffCreate(BaseModel):
+    closed_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    collateral_recovery_amount: Decimal = Field(default=Decimal("0.00"), ge=0)
+    late_payment_count: int = Field(default=0, ge=0)
+    notes: str | None = None
+
+
+class CollateralRecoveryCreate(BaseModel):
+    amount: Decimal = Field(gt=0)
+    occurred_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    notes: str | None = None
+
+
+class LoanPerformanceUpdate(BaseModel):
+    late_payment_count: int = Field(ge=0)
+    notes: str | None = None
 
 
 class HealthResponse(BaseModel):
