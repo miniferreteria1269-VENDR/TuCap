@@ -16,6 +16,8 @@ services:
           property: connectionString
       - key: ENVIRONMENT
         value: production
+      - key: CORS_ORIGINS
+        value: http://localhost:5173,https://tu-cap.vercel.app
       - key: PYTHON_VERSION
         value: 3.12.13
       - key: BOOTSTRAP_TENANT_ID
