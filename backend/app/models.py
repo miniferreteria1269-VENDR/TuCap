@@ -213,3 +213,23 @@ class CapitalLedgerEntry(Base):
     occurred_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     notes: Mapped[str | None] = mapped_column(Text)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, nullable=False)
+
+
+class FinancialReversal(Base):
+    """Append-only audit record for a voided payment or capital ledger entry."""
+
+    __tablename__ = "financial_reversals"
+    __table_args__ = (
+        Index("ux_financial_reversals_payment", "payment_id", unique=True),
+        Index("ux_financial_reversals_ledger", "ledger_entry_id", unique=True),
+        Index("ix_financial_reversals_tenant_date", "tenant_id", "reversed_at"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uuid_string)
+    tenant_id: Mapped[str] = mapped_column(ForeignKey("tenants.id"), index=True, nullable=False)
+    payment_id: Mapped[str | None] = mapped_column(ForeignKey("payments.id"))
+    ledger_entry_id: Mapped[str | None] = mapped_column(ForeignKey("capital_ledger_entries.id"))
+    reversed_by_user_id: Mapped[str] = mapped_column(ForeignKey("users.id"), nullable=False)
+    reason: Mapped[str] = mapped_column(Text, nullable=False)
+    reversed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, nullable=False)
