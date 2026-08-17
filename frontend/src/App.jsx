@@ -1,6 +1,7 @@
 import { useState } from "react";
 
 import BottomNav from "./components/BottomNav";
+import ClientsPage from "./pages/ClientsPage";
 import Dashboard from "./pages/Dashboard";
 import PlaceholderPage from "./pages/PlaceholderPage";
 
@@ -21,7 +22,11 @@ function App() {
       </header>
 
       <main>
-        {activePage === "dashboard" ? <Dashboard /> : <PlaceholderPage page={activePage} />}
+        {activePage === "dashboard" && <Dashboard />}
+        {activePage === "borrowers" && <ClientsPage />}
+        {activePage !== "dashboard" && activePage !== "borrowers" && (
+          <PlaceholderPage page={activePage} />
+        )}
       </main>
 
       <button className="floating-action" type="button" aria-label="Registrar pago">+</button>
@@ -31,4 +36,3 @@ function App() {
 }
 
 export default App;
-

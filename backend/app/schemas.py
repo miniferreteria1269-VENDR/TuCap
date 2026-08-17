@@ -26,6 +26,12 @@ class BorrowerRead(BorrowerCreate):
     updated_at: datetime
 
 
+class BorrowerSummary(BorrowerRead):
+    active_loan_count: int = 0
+    outstanding_principal: Decimal = Decimal("0.00")
+    accrued_interest: Decimal = Decimal("0.00")
+
+
 class LoanCreate(BaseModel):
     borrower_id: str
     original_principal: Decimal = Field(gt=0)
@@ -94,4 +100,3 @@ class PaymentPreview(BaseModel):
 class HealthResponse(BaseModel):
     status: str
     service: str
-
