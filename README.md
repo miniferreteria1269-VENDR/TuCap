@@ -55,3 +55,19 @@ TuCap performs mathematical tracking and recordkeeping. It does not determine wh
 loan terms are lawful and its records are not, by themselves, legal proof of a debt. Final disclaimer
 language must be reviewed for the intended market before public distribution.
 
+## Render development deployment
+
+The root `render.yaml` Blueprint defines a free FastAPI web service and a free PostgreSQL database.
+After deploying the Blueprint, verify:
+
+- `https://YOUR-SERVICE.onrender.com/api/health`
+- `https://YOUR-SERVICE.onrender.com/docs`
+
+The development API documentation uses this tenant header:
+
+```text
+X-Tenant-ID: 00000000-0000-0000-0000-000000000001
+```
+
+The pilot tenant is created idempotently at startup. Authenticated sessions will replace the
+temporary header before TuCap is offered to third parties.
