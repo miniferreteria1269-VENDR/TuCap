@@ -18,6 +18,8 @@ multi-tenant at the data-model level from its first release.
 - Suggested payment allocation pays accrued interest first and then principal.
 - Users may edit that allocation, but the amount assigned to interest cannot exceed accrued interest.
 - Every borrower, loan, payment, accrual, and capital-ledger record belongs to a tenant.
+- The first interest cycle is charged when the loan is disbursed; later cycles follow the next-interest date.
+- Authenticated users are assigned to one tenant, and the API derives tenant scope from the verified session.
 
 ## Run the API locally
 
@@ -30,14 +32,9 @@ python -m app.seed_demo
 uvicorn app.main:app --reload
 ```
 
-API documentation will be available at `http://localhost:8000/docs`. During the development phase,
-tenant-scoped requests use this temporary header:
-
-```text
-X-Tenant-ID: 00000000-0000-0000-0000-000000000001
-```
-
-Authenticated user sessions will replace this temporary development boundary before third-party use.
+API documentation will be available at `http://localhost:8000/docs`. Configure the JWT and bootstrap
+administrator values shown in `backend/.env.example` before first login. The pilot database is Tenant 1;
+future provisioned databases receive Tenant 2 and higher while retaining UUID boundaries internally.
 
 ## Run the interface locally
 
@@ -63,11 +60,7 @@ After deploying the Blueprint, verify:
 - `https://YOUR-SERVICE.onrender.com/api/health`
 - `https://YOUR-SERVICE.onrender.com/docs`
 
-The development API documentation uses this tenant header:
-
-```text
-X-Tenant-ID: 00000000-0000-0000-0000-000000000001
-```
-
-The pilot tenant is created idempotently at startup. Authenticated sessions will replace the
-temporary header before TuCap is offered to third parties.
+The pilot tenant and its Tenant 1 identifier are created idempotently at startup. On an existing
+Render service, add `JWT_SECRET`, `BOOTSTRAP_ADMIN_EMAIL`, and `BOOTSTRAP_ADMIN_PASSWORD` manually in
+the service environment before deploying authentication. `JWT_SECRET` must contain at least 32
+characters and the bootstrap password must contain at least 12.
