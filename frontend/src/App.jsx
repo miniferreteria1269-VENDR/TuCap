@@ -8,6 +8,7 @@ import {
   revokeSession,
 } from "./api";
 import BottomNav from "./components/BottomNav";
+import QuickActions from "./components/QuickActions";
 import ClientsPage from "./pages/ClientsPage";
 import Dashboard from "./pages/Dashboard";
 import DisclaimerPage from "./pages/DisclaimerPage";
@@ -26,6 +27,9 @@ function App() {
   const [checkingSession, setCheckingSession] = useState(() => Boolean(getAccessToken()));
   const [showAccount, setShowAccount] = useState(false);
   const [sessionNotice, setSessionNotice] = useState("");
+  const [showQuickActions, setShowQuickActions] = useState(false);
+  const [dataVersion, setDataVersion] = useState(0);
+  const [actionNotice, setActionNotice] = useState("");
 
   const lockSession = useCallback((notice = "") => {
     clearAccessToken();
@@ -86,6 +90,18 @@ function App() {
     };
   }, [lockSession, user]);
 
+  useEffect(() => {
+    if (!actionNotice) return undefined;
+    const timeoutId = window.setTimeout(() => setActionNotice(""), 3200);
+    return () => window.clearTimeout(timeoutId);
+  }, [actionNotice]);
+
+  const completeQuickAction = (notice) => {
+    setShowQuickActions(false);
+    setDataVersion((current) => current + 1);
+    setActionNotice(notice);
+  };
+
   if (checkingSession) {
     return <main className="auth-shell"><div className="session-loader"><span className="brand-mark">T</span><p>Protegiendo tu cartera…</p></div></main>;
   }
@@ -124,15 +140,28 @@ function App() {
       </header>
 
       <main>
-        {activePage === "dashboard" && <Dashboard />}
-        {activePage === "borrowers" && <ClientsPage />}
+        {activePage === "dashboard" && <Dashboard key={`dashboard-${dataVersion}`} />}
+        {activePage === "borrowers" && <ClientsPage key={`borrowers-${dataVersion}`} />}
         {activePage !== "dashboard" && activePage !== "borrowers" && (
           <PlaceholderPage page={activePage} />
         )}
       </main>
 
-      <button className="floating-action" type="button" aria-label="Registrar pago">+</button>
+      {actionNotice && <div className="action-toast" role="status">✓ {actionNotice}</div>}
+      <button
+        aria-expanded={showQuickActions}
+        aria-label={showQuickActions ? "Cerrar acciones rápidas" : "Abrir acciones rápidas"}
+        className={showQuickActions ? "floating-action open" : "floating-action"}
+        onClick={() => setShowQuickActions((current) => !current)}
+        type="button"
+      >+</button>
       <BottomNav active={activePage} onChange={setActivePage} />
+      {showQuickActions && (
+        <QuickActions
+          onClose={() => setShowQuickActions(false)}
+          onCompleted={completeQuickAction}
+        />
+      )}
     </div>
   );
 }
