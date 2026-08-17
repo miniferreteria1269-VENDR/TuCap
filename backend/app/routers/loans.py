@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 from ..database import get_db
 from ..dependencies import require_tenant_id
 from ..models import Borrower, CapitalLedgerEntry, LedgerEntryType, Loan
-from ..schemas import LoanCreate, LoanRead, PaymentCreate, PaymentPreview, PaymentRead
+from ..schemas import LoanCreate, LoanRead, PaymentCreate, PaymentPreview, PaymentResult
 from ..services.interest import add_month, suggested_payment_allocation
 from ..services.loans import accrue_due_interest, get_tenant_loan, record_payment
 
@@ -66,7 +66,7 @@ def create_loan(
 @router.get("/{loan_id}/payment-preview", response_model=PaymentPreview)
 def preview_payment(
     loan_id: str,
-    amount_received: Annotated[Decimal, Query(gt=0)],
+    amount_received: Annotated[Decimal, Query(ge=0)],
     as_of: Annotated[date, Query()],
     tenant_id: Annotated[str, Depends(require_tenant_id)],
     db: Annotated[Session, Depends(get_db)],
@@ -89,15 +89,16 @@ def preview_payment(
     )
 
 
-@router.post("/{loan_id}/payments", response_model=PaymentRead, status_code=status.HTTP_201_CREATED)
+@router.post("/{loan_id}/payments", response_model=PaymentResult, status_code=status.HTTP_201_CREATED)
 def receive_payment(
     loan_id: str,
     payload: PaymentCreate,
     tenant_id: Annotated[str, Depends(require_tenant_id)],
     db: Annotated[Session, Depends(get_db)],
-) -> object:
+) -> PaymentResult:
     loan = get_tenant_loan(db, tenant_id, loan_id)
     payment = record_payment(db, loan, payload)
     db.commit()
     db.refresh(payment)
-    return payment
+    db.refresh(loan)
+    return PaymentResult(payment=payment, loan=loan)
