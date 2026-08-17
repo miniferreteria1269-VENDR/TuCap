@@ -117,6 +117,29 @@ class HealthResponse(BaseModel):
     service: str
 
 
+class LoginRequest(BaseModel):
+    email: str = Field(min_length=3, max_length=254)
+    password: str = Field(min_length=1, max_length=256)
+
+
+class AuthUserRead(BaseModel):
+    id: str
+    email: str
+    full_name: str
+    tenant_number: int
+    disclaimer_accepted_at: datetime | None
+
+
+class LoginResponse(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+    user: AuthUserRead
+
+
+class DisclaimerAcceptance(BaseModel):
+    accepted: bool
+
+
 class CapitalDepositCreate(BaseModel):
     amount: Decimal = Field(gt=0)
     occurred_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
