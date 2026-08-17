@@ -1,6 +1,12 @@
 import { useCallback, useEffect, useState } from "react";
 
-import { clearAccessToken, getAccessToken, getCurrentUser } from "./api";
+import {
+  clearAccessToken,
+  getAccessToken,
+  getCurrentUser,
+  getLastSessionActivity,
+  revokeSession,
+} from "./api";
 import BottomNav from "./components/BottomNav";
 import ClientsPage from "./pages/ClientsPage";
 import Dashboard from "./pages/Dashboard";
@@ -12,34 +18,89 @@ function initials(name) {
   return name.split(/\s+/).slice(0, 2).map((part) => part[0]).join("").toUpperCase();
 }
 
+const IDLE_TIMEOUT_MS = 5 * 60 * 1000;
+
 function App() {
   const [activePage, setActivePage] = useState("dashboard");
   const [user, setUser] = useState(null);
   const [checkingSession, setCheckingSession] = useState(() => Boolean(getAccessToken()));
   const [showAccount, setShowAccount] = useState(false);
+  const [sessionNotice, setSessionNotice] = useState("");
 
-  const logout = useCallback(() => {
+  const lockSession = useCallback((notice = "") => {
     clearAccessToken();
     setUser(null);
     setShowAccount(false);
     setActivePage("dashboard");
+    setSessionNotice(notice);
   }, []);
 
+  const logout = useCallback(async () => {
+    try {
+      if (getAccessToken()) await revokeSession();
+    } catch {
+      // Clearing the local token still locks the device if the server session already expired.
+    } finally {
+      lockSession();
+    }
+  }, [lockSession]);
+
   useEffect(() => {
-    const unauthorized = () => logout();
+    const unauthorized = () => lockSession("Tu sesión expiró. Ingresa nuevamente.");
     window.addEventListener("tucap:unauthorized", unauthorized);
     if (!getAccessToken()) {
       return () => window.removeEventListener("tucap:unauthorized", unauthorized);
     }
-    getCurrentUser().then(setUser).catch(() => logout()).finally(() => setCheckingSession(false));
+    getCurrentUser().then(setUser).catch(() => lockSession("Tu sesión expiró. Ingresa nuevamente.")).finally(() => setCheckingSession(false));
     return () => window.removeEventListener("tucap:unauthorized", unauthorized);
-  }, [logout]);
+  }, [lockSession]);
+
+  useEffect(() => {
+    if (!user) return undefined;
+    let timeoutId;
+
+    const scheduleLock = () => {
+      window.clearTimeout(timeoutId);
+      const remaining = IDLE_TIMEOUT_MS - (Date.now() - getLastSessionActivity());
+      if (remaining <= 0) {
+        lockSession("Sesión cerrada después de 5 minutos sin actividad.");
+        return;
+      }
+      timeoutId = window.setTimeout(
+        () => lockSession("Sesión cerrada después de 5 minutos sin actividad."),
+        remaining,
+      );
+    };
+
+    const checkVisibility = () => {
+      if (document.visibilityState === "visible") scheduleLock();
+    };
+
+    window.addEventListener("tucap:activity", scheduleLock);
+    document.addEventListener("visibilitychange", checkVisibility);
+    scheduleLock();
+    return () => {
+      window.clearTimeout(timeoutId);
+      window.removeEventListener("tucap:activity", scheduleLock);
+      document.removeEventListener("visibilitychange", checkVisibility);
+    };
+  }, [lockSession, user]);
 
   if (checkingSession) {
     return <main className="auth-shell"><div className="session-loader"><span className="brand-mark">T</span><p>Protegiendo tu cartera…</p></div></main>;
   }
-  if (!user) return <LoginPage onLogin={setUser} />;
-  if (!user.disclaimer_accepted_at) return <DisclaimerPage onAccepted={setUser} onLogout={logout} />;
+  if (!user) {
+    return (
+      <LoginPage
+        notice={sessionNotice}
+        onLogin={(authenticatedUser) => {
+          setSessionNotice("");
+          setUser(authenticatedUser);
+        }}
+      />
+    );
+  }
+  if (user.disclaimer_required) return <DisclaimerPage onAccepted={setUser} onLogout={logout} />;
 
   return (
     <div className="app-shell">
