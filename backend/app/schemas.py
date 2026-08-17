@@ -1,4 +1,4 @@
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 from decimal import Decimal
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
@@ -37,9 +37,16 @@ class LoanCreate(BaseModel):
     original_principal: Decimal = Field(gt=0)
     monthly_interest_rate: Decimal = Field(ge=0)
     start_date: date
+    first_interest_date: date | None = None
     collateral_description: str | None = None
     collateral_estimated_value: Decimal | None = Field(default=None, ge=0)
     notes: str | None = None
+
+    @model_validator(mode="after")
+    def first_interest_must_follow_start(self) -> "LoanCreate":
+        if self.first_interest_date is not None and self.first_interest_date <= self.start_date:
+            raise ValueError("First interest date must be after the loan date")
+        return self
 
 
 class LoanRead(BaseModel):
@@ -100,3 +107,28 @@ class PaymentPreview(BaseModel):
 class HealthResponse(BaseModel):
     status: str
     service: str
+
+
+class CapitalDepositCreate(BaseModel):
+    amount: Decimal = Field(gt=0)
+    occurred_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    notes: str | None = None
+
+
+class CapitalEntryRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: str
+    tenant_id: str
+    amount: Decimal
+    occurred_at: datetime
+    notes: str | None
+    created_at: datetime
+
+
+class CapitalSummary(BaseModel):
+    capital_on_hand: Decimal
+    principal_receivable: Decimal
+    accrued_interest_receivable: Decimal
+    active_loans: int
+    collected_this_month: Decimal
