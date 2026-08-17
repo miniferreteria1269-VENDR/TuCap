@@ -197,6 +197,32 @@ button {
   cursor: pointer;
 }
 
+.hero-actions {
+  margin-top: 20px;
+  display: flex;
+  gap: 9px;
+}
+
+.hero-actions .secondary-button {
+  margin-top: 0;
+}
+
+.withdraw-button {
+  min-height: 44px;
+  padding: 0 16px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  color: var(--text);
+  background: var(--surface-raised);
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.withdraw-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
 .primary-button {
   border: 0;
   color: #041008;
@@ -1011,10 +1037,21 @@ button {
   text-align: right;
 }
 
-.receive-payment-button {
+.loan-card-actions {
+  margin-top: 13px;
+  display: grid;
+  grid-template-columns: 1fr 1.15fr;
+  gap: 8px;
+}
+
+.loan-card-actions:has(.loan-detail-button:only-child) {
+  grid-template-columns: 1fr;
+}
+
+.receive-payment-button,
+.loan-detail-button {
   width: 100%;
   min-height: 40px;
-  margin-top: 13px;
   border: 1px solid rgba(80, 255, 154, 0.32);
   border-radius: 11px;
   color: var(--plasma);
@@ -1022,6 +1059,266 @@ button {
   font-size: 0.76rem;
   font-weight: 800;
   cursor: pointer;
+}
+
+.loan-detail-button {
+  border-color: var(--border);
+  color: var(--text);
+  background: var(--surface-raised);
+}
+
+.withdrawal-balance,
+.withdrawal-result {
+  margin-bottom: 14px;
+  padding: 13px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: #07100c;
+}
+
+.withdrawal-balance span,
+.withdrawal-result span {
+  color: var(--muted);
+  font-size: 0.73rem;
+}
+
+.withdrawal-result {
+  border-color: rgba(80, 255, 154, 0.25);
+  background: var(--plasma-soft);
+}
+
+.withdrawal-result strong {
+  color: var(--plasma);
+}
+
+.withdrawal-result.invalid {
+  border-color: rgba(255, 107, 117, 0.3);
+  background: rgba(255, 107, 117, 0.08);
+}
+
+.withdrawal-result.invalid strong {
+  color: #ff9ca4;
+}
+
+.loan-detail-sheet {
+  padding-bottom: calc(24px + env(safe-area-inset-bottom));
+}
+
+.loan-detail-hero {
+  margin-top: 18px;
+  padding: 17px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  border: 1px solid rgba(80, 255, 154, 0.25);
+  border-radius: 16px;
+  background: linear-gradient(145deg, var(--plasma-soft), #07100c);
+}
+
+.loan-detail-hero > div {
+  display: grid;
+  gap: 7px;
+}
+
+.loan-detail-hero small,
+.loan-detail-hero > span {
+  color: var(--muted);
+  font-size: 0.68rem;
+}
+
+.loan-detail-hero strong {
+  font-size: 1.65rem;
+  letter-spacing: -0.04em;
+}
+
+.loan-detail-hero > span {
+  color: var(--plasma);
+  font-weight: 800;
+}
+
+.detail-loading {
+  padding: 34px 8px;
+  color: var(--muted);
+  text-align: center;
+  font-size: 0.78rem;
+}
+
+.loan-detail-error {
+  margin-top: 14px;
+}
+
+.loan-detail-metrics {
+  margin-top: 10px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.loan-detail-metrics article {
+  min-height: 82px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  border: 1px solid var(--border);
+  border-radius: 13px;
+  background: #07100c;
+}
+
+.loan-detail-metrics span {
+  color: var(--muted);
+  font-size: 0.66rem;
+}
+
+.loan-detail-section {
+  margin-top: 11px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 15px;
+  background: #07100c;
+}
+
+.loan-facts,
+.loan-facts div,
+.payment-history-list dl,
+.payment-history-list dl div {
+  margin: 0;
+}
+
+.loan-facts {
+  margin-top: 11px;
+  display: grid;
+  gap: 9px;
+}
+
+.loan-facts div,
+.payment-history-list dl div {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.loan-facts dt,
+.loan-facts dd,
+.payment-history-list dt,
+.payment-history-list dd {
+  margin: 0;
+  font-size: 0.7rem;
+  line-height: 1.4;
+}
+
+.loan-facts dt,
+.payment-history-list dt {
+  color: var(--muted);
+}
+
+.loan-facts dd {
+  max-width: 62%;
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+
+.history-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.history-heading h3 {
+  margin: 4px 0 0;
+  font-size: 1rem;
+}
+
+.history-heading > span {
+  min-width: 26px;
+  height: 26px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  color: var(--plasma);
+  background: var(--plasma-soft);
+  font-size: 0.68rem;
+  font-weight: 800;
+}
+
+.history-empty {
+  margin: 17px 0 3px;
+  color: var(--muted);
+  font-size: 0.74rem;
+}
+
+.payment-history-list,
+.accrual-history-list {
+  margin-top: 12px;
+  display: grid;
+  gap: 8px;
+}
+
+.payment-history-list article {
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+}
+
+.payment-history-list article > div:first-child,
+.accrual-history-list > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.payment-history-list time {
+  color: var(--muted);
+  font-size: 0.64rem;
+}
+
+.payment-history-list dl {
+  margin-top: 9px;
+  display: grid;
+  gap: 5px;
+}
+
+.payment-history-list article > p {
+  margin: 9px 0 0;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 0.68rem;
+  line-height: 1.4;
+}
+
+.accrual-history-list > div {
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.72rem;
+}
+
+.accrual-history-list > div:last-child {
+  border-bottom: 0;
+}
+
+.accrual-history-list span {
+  display: grid;
+  gap: 3px;
+}
+
+.accrual-history-list small {
+  color: var(--muted);
+  font-size: 0.62rem;
+}
+
+.loan-detail-pay {
+  position: sticky;
+  bottom: 0;
+  margin-top: 14px;
+  box-shadow: 0 -10px 25px rgba(5, 11, 9, 0.8);
 }
 
 .payment-balances {
