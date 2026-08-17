@@ -80,8 +80,8 @@ class PaymentCreate(BaseModel):
     @model_validator(mode="after")
     def allocation_must_equal_received(self) -> "PaymentCreate":
         allocated = self.amount_to_interest + self.amount_to_principal
-        if allocated > self.amount_received:
-            raise ValueError("Interest and principal allocations cannot exceed the amount received")
+        if allocated != self.amount_received:
+            raise ValueError("Interest and principal allocations must equal the amount received")
         return self
 
 
@@ -102,6 +102,11 @@ class PaymentPreview(BaseModel):
     suggested_to_interest: Decimal
     suggested_to_principal: Decimal
     unapplied_amount: Decimal
+
+
+class PaymentResult(BaseModel):
+    payment: PaymentRead
+    loan: LoanRead
 
 
 class HealthResponse(BaseModel):
