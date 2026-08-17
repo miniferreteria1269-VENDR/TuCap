@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 
 import jwt
@@ -8,12 +9,18 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from ..config import get_settings
-from ..models import TenantIdentifier, User
+from ..models import AuthSession, TenantIdentifier, User
 
 
 ALGORITHM = "HS256"
 ISSUER = "tucap-api"
 password_hash = PasswordHash.recommended()
+
+
+@dataclass(frozen=True)
+class TokenClaims:
+    user_id: str
+    session_id: str
 
 
 def normalize_email(email: str) -> str:
@@ -38,19 +45,31 @@ def require_jwt_secret() -> str:
     return secret
 
 
-def create_access_token(user: User) -> str:
-    settings = get_settings()
+def create_auth_session(db: Session, user: User) -> AuthSession:
+    now = datetime.now(timezone.utc)
+    session = AuthSession(
+        user_id=user.id,
+        last_activity_at=now,
+        expires_at=now + timedelta(minutes=get_settings().jwt_expire_minutes),
+    )
+    db.add(session)
+    db.flush()
+    return session
+
+
+def create_access_token(user: User, session: AuthSession) -> str:
     now = datetime.now(timezone.utc)
     payload = {
         "sub": user.id,
+        "sid": session.id,
         "iat": now,
-        "exp": now + timedelta(minutes=settings.jwt_expire_minutes),
+        "exp": session.expires_at,
         "iss": ISSUER,
     }
     return jwt.encode(payload, require_jwt_secret(), algorithm=ALGORITHM)
 
 
-def decode_access_token(token: str) -> str:
+def decode_access_token(token: str) -> TokenClaims:
     unauthorized = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Invalid or expired session",
@@ -62,14 +81,31 @@ def decode_access_token(token: str) -> str:
             require_jwt_secret(),
             algorithms=[ALGORITHM],
             issuer=ISSUER,
-            options={"require": ["sub", "iat", "exp", "iss"]},
+            options={"require": ["sub", "sid", "iat", "exp", "iss"]},
         )
     except (InvalidTokenError, ValueError):
         raise unauthorized from None
     user_id = payload.get("sub")
-    if not isinstance(user_id, str) or not user_id:
+    session_id = payload.get("sid")
+    if not isinstance(user_id, str) or not user_id or not isinstance(session_id, str) or not session_id:
         raise unauthorized
-    return user_id
+    return TokenClaims(user_id=user_id, session_id=session_id)
+
+
+def as_utc(value: datetime) -> datetime:
+    if value.tzinfo is None:
+        return value.replace(tzinfo=timezone.utc)
+    return value.astimezone(timezone.utc)
+
+
+def session_has_expired(session: AuthSession, now: datetime | None = None) -> bool:
+    current = now or datetime.now(timezone.utc)
+    idle_limit = timedelta(minutes=get_settings().session_idle_minutes)
+    return (
+        session.revoked_at is not None
+        or as_utc(session.expires_at) <= current
+        or as_utc(session.last_activity_at) <= current - idle_limit
+    )
 
 
 def authenticate_user(db: Session, email: str, password: str) -> User | None:
