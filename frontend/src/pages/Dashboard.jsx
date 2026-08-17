@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 
-import { addCapital, getCapitalSummary } from "../api";
+import { addCapital, getCapitalSummary, withdrawCapital } from "../api";
 import AddCapitalModal from "../components/AddCapitalModal";
 import MetricCard from "../components/MetricCard";
+import WithdrawCapitalModal from "../components/WithdrawCapitalModal";
 
 const currency = new Intl.NumberFormat("es-SV", { style: "currency", currency: "USD" });
 
@@ -17,6 +18,7 @@ const emptySummary = {
 function Dashboard() {
   const [summary, setSummary] = useState(emptySummary);
   const [showCapitalForm, setShowCapitalForm] = useState(false);
+  const [showWithdrawalForm, setShowWithdrawalForm] = useState(false);
   const [error, setError] = useState("");
 
   const loadSummary = async () => {
@@ -48,6 +50,12 @@ function Dashboard() {
     await loadSummary();
   };
 
+  const saveWithdrawal = async (payload) => {
+    await withdrawCapital(payload);
+    setShowWithdrawalForm(false);
+    await loadSummary();
+  };
+
   return (
     <>
       <section className="hero-card">
@@ -58,7 +66,10 @@ function Dashboard() {
             ? "Listo para registrar el capital inicial"
             : "Disponible después de préstamos, cobros y movimientos"}
         </p>
-        <button className="secondary-button" type="button" onClick={() => setShowCapitalForm(true)}>Agregar capital</button>
+        <div className="hero-actions">
+          <button className="secondary-button" type="button" onClick={() => setShowCapitalForm(true)}>Agregar capital</button>
+          <button className="withdraw-button" disabled={Number(summary.capital_on_hand) <= 0} type="button" onClick={() => setShowWithdrawalForm(true)}>Retirar</button>
+        </div>
       </section>
 
       {error && <p className="dashboard-error">No se pudo actualizar el resumen: {error}</p>}
@@ -87,6 +98,9 @@ function Dashboard() {
 
       {showCapitalForm && (
         <AddCapitalModal onClose={() => setShowCapitalForm(false)} onSave={saveCapital} />
+      )}
+      {showWithdrawalForm && (
+        <WithdrawCapitalModal available={summary.capital_on_hand} onClose={() => setShowWithdrawalForm(false)} onSave={saveWithdrawal} />
       )}
     </>
   );
