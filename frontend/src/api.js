@@ -137,3 +137,24 @@ export function recordPayment(loanId, payload) {
     body: JSON.stringify(payload),
   });
 }
+
+export function writeOffLoan(loanId, payload) {
+  return request(`/loans/${loanId}/write-off`, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function addCollateralRecovery(loanId, payload) {
+  return request(`/loans/${loanId}/collateral-recoveries`, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function updateLoanPerformance(loanId, payload) {
+  return request(`/loans/${loanId}/performance`, {
+    method: "PATCH",
+    body: JSON.stringify(payload),
+  });
+}
