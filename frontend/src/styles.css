@@ -229,6 +229,22 @@ button {
   background: var(--plasma);
 }
 
+.danger-button,
+.write-off-button {
+  min-height: 44px;
+  border: 1px solid rgba(255, 107, 117, 0.38);
+  border-radius: 12px;
+  color: #ff9ca4;
+  background: rgba(255, 107, 117, 0.09);
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.danger-button:disabled {
+  cursor: wait;
+  opacity: 0.55;
+}
+
 .secondary-button {
   margin-top: 20px;
   border: 1px solid rgba(80, 255, 154, 0.38);
@@ -1319,6 +1335,163 @@ button {
   bottom: 0;
   margin-top: 14px;
   box-shadow: 0 -10px 25px rgba(5, 11, 9, 0.8);
+}
+
+.loan-detail-actions {
+  position: sticky;
+  bottom: 0;
+  margin-top: 14px;
+  padding-top: 8px;
+  display: grid;
+  grid-template-columns: 0.9fr 1.1fr;
+  gap: 8px;
+  background: linear-gradient(transparent, var(--surface) 22%);
+  box-shadow: 0 -10px 25px rgba(5, 11, 9, 0.55);
+}
+
+.loan-detail-actions button {
+  width: 100%;
+}
+
+.closed-actions:has(button:only-child) {
+  grid-template-columns: 1fr;
+}
+
+.performance-card {
+  margin-top: 11px;
+  padding: 16px;
+  border: 1px solid rgba(80, 255, 154, 0.28);
+  border-radius: 15px;
+  background: linear-gradient(145deg, var(--plasma-soft), #07100c);
+}
+
+.performance-card.loss {
+  border-color: rgba(255, 107, 117, 0.28);
+  background: linear-gradient(145deg, rgba(255, 107, 117, 0.08), #07100c);
+}
+
+.performance-heading,
+.economic-result,
+.contract-shortfall {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.performance-heading h3 {
+  margin-top: 4px;
+  font-size: 1rem;
+}
+
+.performance-heading > strong {
+  color: var(--plasma);
+  font-size: 0.68rem;
+  text-align: right;
+}
+
+.performance-card.loss .performance-heading > strong,
+.performance-card.loss .economic-result strong {
+  color: #ff9ca4;
+}
+
+.economic-result {
+  margin-top: 14px;
+  padding: 13px 0;
+  align-items: end;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+
+.economic-result span,
+.performance-grid span,
+.contract-shortfall span,
+.contract-shortfall small {
+  color: var(--muted);
+  font-size: 0.65rem;
+}
+
+.economic-result strong {
+  color: var(--plasma);
+  font-size: 1.35rem;
+}
+
+.performance-grid {
+  margin-top: 13px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 11px;
+}
+
+.performance-grid > div {
+  display: grid;
+  gap: 4px;
+}
+
+.performance-grid strong {
+  font-size: 0.78rem;
+}
+
+.contract-shortfall {
+  margin-top: 13px;
+  padding: 11px;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  border: 1px solid rgba(255, 107, 117, 0.2);
+  border-radius: 11px;
+  background: rgba(255, 107, 117, 0.06);
+}
+
+.contract-shortfall small {
+  grid-column: 1 / -1;
+}
+
+.performance-notes {
+  margin: 12px 0 0;
+  color: var(--muted);
+  font-size: 0.68rem;
+  line-height: 1.45;
+}
+
+.economic-preview {
+  margin-bottom: 14px;
+  padding: 13px;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 5px 12px;
+  border: 1px solid rgba(80, 255, 154, 0.25);
+  border-radius: 12px;
+  background: var(--plasma-soft);
+}
+
+.economic-preview.loss {
+  border-color: rgba(255, 107, 117, 0.3);
+  background: rgba(255, 107, 117, 0.07);
+}
+
+.economic-preview span,
+.economic-preview small,
+.warning-note {
+  color: var(--muted);
+  font-size: 0.68rem;
+}
+
+.economic-preview strong {
+  color: var(--plasma);
+}
+
+.economic-preview.loss strong {
+  color: #ff9ca4;
+}
+
+.economic-preview small {
+  grid-column: 1 / -1;
+}
+
+.warning-note {
+  margin: 0 0 14px;
+  padding: 10px 12px;
+  border-left: 2px solid #ff9ca4;
+  line-height: 1.45;
 }
 
 .payment-balances {
