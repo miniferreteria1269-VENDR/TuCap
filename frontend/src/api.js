@@ -97,6 +97,11 @@ export function getCapitalSummary() {
   return request("/capital/summary");
 }
 
+export function getCapitalReport(dateFrom, dateTo) {
+  const query = new URLSearchParams({ date_from: dateFrom, date_to: dateTo });
+  return request(`/capital/report?${query.toString()}`);
+}
+
 export function addCapital(payload) {
   return request("/capital/deposits", {
     method: "POST",
