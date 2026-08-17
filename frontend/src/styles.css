@@ -2502,6 +2502,252 @@ button {
   font-weight: 800;
 }
 
+.more-page-heading {
+  margin-bottom: 14px;
+}
+
+.more-capital-card {
+  padding: 19px;
+  border: 1px solid rgba(80, 255, 154, 0.25);
+  border-radius: 19px;
+  background: linear-gradient(145deg, rgba(80, 255, 154, 0.11), transparent 58%), var(--surface);
+}
+
+.more-capital-card > div:first-child {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.more-capital-card span,
+.more-capital-card small {
+  color: var(--muted);
+}
+
+.more-capital-card span {
+  font-size: 0.7rem;
+}
+
+.more-capital-card > div:first-child > strong {
+  font-size: 2rem;
+  letter-spacing: -0.045em;
+}
+
+.more-capital-card small {
+  font-size: 0.65rem;
+}
+
+.more-capital-actions {
+  margin-top: 16px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 9px;
+}
+
+.more-capital-actions button {
+  min-height: 43px;
+}
+
+.more-capital-error {
+  margin: 11px 0 0;
+  color: var(--danger);
+  font-size: 0.68rem;
+  line-height: 1.4;
+}
+
+.more-section {
+  margin-top: 22px;
+}
+
+.more-section-label {
+  margin: 0 0 8px;
+  color: var(--muted);
+  font-size: 0.67rem;
+  font-weight: 800;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+}
+
+.more-menu-list {
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--surface);
+}
+
+.more-menu-row {
+  width: 100%;
+  min-height: 72px;
+  padding: 11px 13px;
+  border: 0;
+  border-bottom: 1px solid var(--border);
+  display: grid;
+  grid-template-columns: 41px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 11px;
+  color: var(--text);
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+
+.more-menu-row:last-child {
+  border-bottom: 0;
+}
+
+.more-menu-row:active {
+  background: var(--plasma-soft);
+}
+
+.more-menu-row > span:nth-child(2) {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.more-menu-row strong {
+  font-size: 0.83rem;
+}
+
+.more-menu-row small {
+  color: var(--muted);
+  font-size: 0.66rem;
+  line-height: 1.35;
+}
+
+.more-menu-icon {
+  width: 41px;
+  height: 41px;
+  border: 1px solid rgba(80, 255, 154, 0.25);
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  color: var(--plasma);
+  background: var(--plasma-soft);
+  font-size: 1rem;
+  font-weight: 900;
+}
+
+.more-logout-button {
+  width: 100%;
+  min-height: 48px;
+  margin-top: 24px;
+  border: 1px solid rgba(255, 107, 117, 0.28);
+  border-radius: 13px;
+  color: var(--danger);
+  background: rgba(255, 107, 117, 0.07);
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.more-logout-button span {
+  margin-right: 8px;
+  font-size: 1rem;
+}
+
+.more-footer {
+  margin: 16px 0 3px;
+  color: #5f786b;
+  font-size: 0.62rem;
+  text-align: center;
+}
+
+.information-sheet .modal-heading h2 {
+  max-width: 300px;
+}
+
+.settings-list {
+  margin: 19px 0 0;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+  background: #07100c;
+}
+
+.settings-list > div {
+  min-height: 49px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.settings-list > div:last-child {
+  border-bottom: 0;
+}
+
+.settings-list dt {
+  color: var(--muted);
+  font-size: 0.69rem;
+}
+
+.settings-list dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+  font-size: 0.73rem;
+  font-weight: 800;
+  text-align: right;
+}
+
+.security-explanation,
+.legal-reminder,
+.logout-confirmation > p {
+  color: var(--muted);
+  font-size: 0.73rem;
+  line-height: 1.55;
+}
+
+.security-explanation {
+  margin: 13px 1px;
+}
+
+.app-version {
+  margin-bottom: 16px;
+  padding: 11px 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--muted);
+  background: var(--surface-raised);
+  font-size: 0.68rem;
+}
+
+.app-version strong {
+  color: var(--text);
+}
+
+.legal-notice-copy {
+  margin-top: 18px;
+  padding: 15px;
+  border: 1px solid rgba(80, 255, 154, 0.22);
+  border-radius: 14px;
+  color: #b9c9c0;
+  background: var(--plasma-soft);
+  font-size: 0.76rem;
+  line-height: 1.55;
+}
+
+.legal-notice-copy p {
+  margin: 0 0 11px;
+}
+
+.legal-notice-copy p:last-child {
+  margin-bottom: 0;
+}
+
+.legal-reminder {
+  margin: 12px 1px 16px;
+}
+
+.logout-confirmation > p {
+  margin: 19px 1px 4px;
+}
+
 @keyframes quick-spin {
   to { transform: rotate(360deg); }
 }
