@@ -11,7 +11,12 @@ from ..dependencies import require_tenant_id
 from ..models import Borrower, CapitalLedgerEntry, LedgerEntryType, Loan
 from ..schemas import LoanCreate, LoanRead, PaymentCreate, PaymentPreview, PaymentResult
 from ..services.interest import add_month, suggested_payment_allocation
-from ..services.loans import accrue_due_interest, get_tenant_loan, record_payment
+from ..services.loans import (
+    accrue_due_interest,
+    get_tenant_loan,
+    post_initial_interest,
+    record_payment,
+)
 
 
 router = APIRouter(prefix="/loans", tags=["loans"])
@@ -44,11 +49,12 @@ def create_loan(
     loan = Loan(
         tenant_id=tenant_id,
         principal_outstanding=payload.original_principal,
-        next_interest_date=payload.first_interest_date or add_month(payload.start_date),
-        **payload.model_dump(exclude={"first_interest_date"}),
+        next_interest_date=payload.next_interest_date or add_month(payload.start_date),
+        **payload.model_dump(exclude={"next_interest_date"}),
     )
     db.add(loan)
     db.flush()
+    post_initial_interest(db, loan)
     db.add(
         CapitalLedgerEntry(
             tenant_id=tenant_id,
