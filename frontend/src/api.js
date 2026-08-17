@@ -57,3 +57,18 @@ export function createLoan(payload) {
     body: JSON.stringify(payload),
   });
 }
+
+export function getPaymentPreview(loanId, amountReceived, asOf) {
+  const query = new URLSearchParams({
+    amount_received: String(amountReceived),
+    as_of: asOf,
+  });
+  return request(`/loans/${loanId}/payment-preview?${query.toString()}`);
+}
+
+export function recordPayment(loanId, payload) {
+  return request(`/loans/${loanId}/payments`, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
