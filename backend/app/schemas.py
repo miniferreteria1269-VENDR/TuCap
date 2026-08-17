@@ -4,7 +4,7 @@ from typing import Annotated
 
 from pydantic import AliasChoices, BaseModel, ConfigDict, Field, model_validator
 
-from .models import BorrowerStatus, LoanClosureReason, LoanStatus
+from .models import BorrowerStatus, LedgerEntryType, LoanClosureReason, LoanStatus
 
 
 class BorrowerCreate(BaseModel):
@@ -97,6 +97,8 @@ class PaymentRead(PaymentCreate):
     loan_id: str
     unapplied_amount: Decimal
     created_at: datetime
+    reversed_at: datetime | None = None
+    reversal_reason: str | None = None
 
 
 class PaymentPreview(BaseModel):
@@ -215,10 +217,20 @@ class CapitalEntryRead(BaseModel):
 
     id: str
     tenant_id: str
+    entry_type: LedgerEntryType
     amount: Decimal
+    loan_id: str | None
     occurred_at: datetime
     notes: str | None
     created_at: datetime
+    reversed_at: datetime | None = None
+    reversal_reason: str | None = None
+    reversible: bool = False
+
+
+class ReversalCreate(BaseModel):
+    reason: str = Field(min_length=3, max_length=500)
+    reversed_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 class CapitalSummary(BaseModel):
