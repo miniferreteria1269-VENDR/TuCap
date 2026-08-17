@@ -1,5 +1,15 @@
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000/api";
 const TOKEN_KEY = "tucap_access_token";
+const LAST_ACTIVITY_KEY = "tucap_last_request_at";
+
+export function markSessionActivity() {
+  localStorage.setItem(LAST_ACTIVITY_KEY, String(Date.now()));
+  window.dispatchEvent(new Event("tucap:activity"));
+}
+
+export function getLastSessionActivity() {
+  return Number(localStorage.getItem(LAST_ACTIVITY_KEY) || 0);
+}
 
 export function getAccessToken() {
   return localStorage.getItem(TOKEN_KEY);
@@ -7,10 +17,12 @@ export function getAccessToken() {
 
 export function setAccessToken(token) {
   localStorage.setItem(TOKEN_KEY, token);
+  markSessionActivity();
 }
 
 export function clearAccessToken() {
   localStorage.removeItem(TOKEN_KEY);
+  localStorage.removeItem(LAST_ACTIVITY_KEY);
 }
 
 async function request(path, options = {}) {
@@ -18,6 +30,7 @@ async function request(path, options = {}) {
   const token = getAccessToken();
   const response = await fetch(`${API_URL}${path}`, {
     ...fetchOptions,
+    cache: "no-store",
     headers: {
       "Content-Type": "application/json",
       ...(authenticated && token ? { Authorization: `Bearer ${token}` } : {}),
@@ -34,6 +47,7 @@ async function request(path, options = {}) {
     throw new Error(body?.detail || "No se pudo completar la solicitud.");
   }
 
+  if (authenticated) markSessionActivity();
   return response.json();
 }
 
@@ -54,6 +68,10 @@ export function acceptDisclaimer() {
     method: "POST",
     body: JSON.stringify({ accepted: true }),
   });
+}
+
+export function revokeSession() {
+  return request("/auth/logout", { method: "POST" });
 }
 
 export function getBorrowers() {
