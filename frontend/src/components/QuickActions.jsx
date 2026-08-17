@@ -97,13 +97,13 @@ function SelectionSheet({ action, borrowers, loans, loading, error, onClose, onR
   );
 }
 
-function QuickActions({ onClose, onCompleted }) {
-  const [action, setAction] = useState(null);
+function QuickActions({ initialAction = null, onClose, onCompleted }) {
+  const [action, setAction] = useState(initialAction);
   const [borrowers, setBorrowers] = useState([]);
   const [loans, setLoans] = useState([]);
   const [capitalOnHand, setCapitalOnHand] = useState(0);
   const [selection, setSelection] = useState(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(() => ["new-loan", "payment", "withdraw-capital"].includes(initialAction));
   const [error, setError] = useState("");
   const [loadVersion, setLoadVersion] = useState(0);
 
