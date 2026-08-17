@@ -128,6 +128,7 @@ class AuthUserRead(BaseModel):
     full_name: str
     tenant_number: int
     disclaimer_accepted_at: datetime | None
+    disclaimer_required: bool
 
 
 class LoginResponse(BaseModel):
