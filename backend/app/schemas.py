@@ -262,3 +262,22 @@ class CapitalSummary(BaseModel):
     accrued_interest_receivable: Decimal
     active_loans: int
     collected_this_month: Decimal
+
+
+class CapitalPeriodReport(BaseModel):
+    date_from: date
+    date_to: date
+    payments_collected: Decimal
+    interest_collected: Decimal
+    principal_collected: Decimal
+    capital_lent: Decimal
+    new_loans: int
+    capital_deposited: Decimal
+    capital_withdrawn: Decimal
+    collateral_recovered: Decimal
+    loans_closed: int
+    loans_paid: int
+    loans_written_off: int
+    closed_principal_lent: Decimal
+    closed_total_recovered: Decimal
+    realized_economic_result: Decimal
