@@ -1,5 +1,6 @@
 from datetime import date, datetime, timezone
 from decimal import Decimal
+from typing import Annotated
 
 from pydantic import AliasChoices, BaseModel, ConfigDict, Field, model_validator
 
@@ -37,10 +38,10 @@ class LoanCreate(BaseModel):
     original_principal: Decimal = Field(gt=0)
     monthly_interest_rate: Decimal = Field(ge=0)
     start_date: date
-    next_interest_date: date | None = Field(
-        default=None,
-        validation_alias=AliasChoices("next_interest_date", "first_interest_date"),
-    )
+    next_interest_date: Annotated[
+        date | None,
+        Field(validation_alias=AliasChoices("next_interest_date", "first_interest_date")),
+    ] = None
     collateral_description: str | None = None
     collateral_estimated_value: Decimal | None = Field(default=None, ge=0)
     notes: str | None = None
@@ -112,6 +113,25 @@ class PaymentResult(BaseModel):
     loan: LoanRead
 
 
+class InterestAccrualRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: str
+    cycle_date: date
+    principal_basis: Decimal
+    monthly_rate: Decimal
+    amount: Decimal
+    created_at: datetime
+
+
+class LoanDetailRead(LoanRead):
+    payments: list[PaymentRead]
+    interest_accruals: list[InterestAccrualRead]
+    total_interest_collected: Decimal
+    total_principal_collected: Decimal
+    total_collected: Decimal
+
+
 class HealthResponse(BaseModel):
     status: str
     service: str
@@ -142,6 +162,12 @@ class DisclaimerAcceptance(BaseModel):
 
 
 class CapitalDepositCreate(BaseModel):
+    amount: Decimal = Field(gt=0)
+    occurred_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    notes: str | None = None
+
+
+class CapitalWithdrawalCreate(BaseModel):
     amount: Decimal = Field(gt=0)
     occurred_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     notes: str | None = None
