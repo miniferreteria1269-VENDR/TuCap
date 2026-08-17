@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 
 import { getLoanDetail } from "../api";
+import ClosedLoanActionModal from "./ClosedLoanActionModal";
+import WriteOffModal from "./WriteOffModal";
 
 const currency = new Intl.NumberFormat("es-SV", { style: "currency", currency: "USD" });
 const day = new Intl.DateTimeFormat("es-SV", { day: "numeric", month: "short", year: "numeric" });
@@ -15,9 +17,10 @@ function formatDateTime(value) {
   return dateTime.format(new Date(value));
 }
 
-function LoanDetailModal({ client, loan, onClose, onReceivePayment }) {
+function LoanDetailModal({ client, loan, onClose, onReceivePayment, onMutated }) {
   const [detail, setDetail] = useState(null);
   const [error, setError] = useState("");
+  const [action, setAction] = useState(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -29,6 +32,15 @@ function LoanDetailModal({ client, loan, onClose, onReceivePayment }) {
 
   const current = detail || loan;
   const totalPending = Number(current.principal_outstanding || 0) + Number(current.accrued_interest || 0);
+
+  const completeAction = (updated) => {
+    setDetail(updated);
+    setAction(null);
+    onMutated?.();
+  };
+
+  if (action === "write-off") return <WriteOffModal client={client} loan={current} onClose={() => setAction(null)} onComplete={completeAction} />;
+  if (action === "recovery" || action === "performance") return <ClosedLoanActionModal loan={current} mode={action} onClose={() => setAction(null)} onComplete={completeAction} />;
 
   return (
     <div className="modal-backdrop" role="presentation" onMouseDown={onClose}>
@@ -55,6 +67,26 @@ function LoanDetailModal({ client, loan, onClose, onReceivePayment }) {
               <article><span>Total cobrado</span><strong>{currency.format(detail.total_collected)}</strong></article>
               <article><span>Interés cobrado</span><strong>{currency.format(detail.total_interest_collected)}</strong></article>
             </div>
+
+            {detail.performance && (
+              <section className={`performance-card ${detail.performance.economic_outcome}`}>
+                <div className="performance-heading">
+                  <div><p className="eyebrow">Desempeño final</p><h3>{detail.performance.contract_fulfilled ? "Contrato cumplido" : "Contrato incumplido"}</h3></div>
+                  <strong>{detail.performance.economic_outcome === "loss" ? "Pérdida" : detail.performance.economic_outcome === "break_even" ? "Punto de equilibrio" : detail.status === "written_off" ? "Ganancia ajustada" : "Ganancia"}</strong>
+                </div>
+                <div className="economic-result"><span>Resultado económico</span><strong>{currency.format(detail.performance.economic_result)}</strong></div>
+                <div className="performance-grid">
+                  <div><span>Total recuperado</span><strong>{currency.format(detail.performance.total_recovered)}</strong></div>
+                  <div><span>Pagos recibidos</span><strong>{currency.format(detail.performance.payments_collected)}</strong></div>
+                  <div><span>Garantía recuperada</span><strong>{currency.format(detail.performance.collateral_recovered)}</strong></div>
+                  <div><span>Promedio mensual</span><strong>{currency.format(detail.performance.average_monthly_result)}</strong></div>
+                  <div><span>Duración</span><strong>{detail.performance.duration_days} días</strong></div>
+                  <div><span>Pagos tardíos</span><strong>{detail.performance.late_payment_count}</strong></div>
+                </div>
+                {!detail.performance.contract_fulfilled && <div className="contract-shortfall"><span>Faltante contractual</span><strong>{currency.format(Number(detail.performance.principal_shortfall) + Number(detail.performance.interest_shortfall))}</strong><small>Capital {currency.format(detail.performance.principal_shortfall)} · Interés {currency.format(detail.performance.interest_shortfall)}</small></div>}
+                {detail.performance.notes && <p className="performance-notes">{detail.performance.notes}</p>}
+              </section>
+            )}
 
             <section className="loan-detail-section">
               <p className="eyebrow">Condiciones</p>
@@ -94,7 +126,8 @@ function LoanDetailModal({ client, loan, onClose, onReceivePayment }) {
           </>
         )}
 
-        {current.status === "active" && <button className="primary-button full-action loan-detail-pay" type="button" onClick={() => onReceivePayment(current)}>Recibir pago</button>}
+        {current.status === "active" && <div className="loan-detail-actions"><button className="write-off-button" type="button" onClick={() => setAction("write-off")}>Castigar préstamo</button><button className="primary-button" type="button" onClick={() => onReceivePayment(current)}>Recibir pago</button></div>}
+        {current.status !== "active" && <div className="loan-detail-actions closed-actions"><button className="loan-detail-button" type="button" onClick={() => setAction("performance")}>Editar desempeño</button>{current.status === "written_off" && <button className="primary-button" type="button" onClick={() => setAction("recovery")}>Registrar recuperación</button>}</div>}
       </section>
     </div>
   );
