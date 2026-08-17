@@ -22,7 +22,7 @@ function NewLoanModal({ client, capitalOnHand, onClose, onSave }) {
     original_principal: "",
     monthly_interest_rate: "",
     start_date: initialDate,
-    first_interest_date: oneMonthAfter(initialDate),
+    next_interest_date: oneMonthAfter(initialDate),
     collateral_description: "",
     collateral_estimated_value: "",
     notes: "",
@@ -48,7 +48,7 @@ function NewLoanModal({ client, capitalOnHand, onClose, onSave }) {
     setForm((current) => ({
       ...current,
       start_date: value,
-      first_interest_date: value ? oneMonthAfter(value) : "",
+      next_interest_date: value ? oneMonthAfter(value) : "",
     }));
   };
 
@@ -57,7 +57,7 @@ function NewLoanModal({ client, capitalOnHand, onClose, onSave }) {
     original_principal: form.original_principal,
     monthly_interest_rate: form.monthly_interest_rate,
     start_date: form.start_date,
-    first_interest_date: form.first_interest_date,
+    next_interest_date: form.next_interest_date,
     collateral_description: form.collateral_description.trim() || null,
     collateral_estimated_value: form.collateral_estimated_value || null,
     notes: form.notes.trim() || null,
@@ -73,12 +73,12 @@ function NewLoanModal({ client, capitalOnHand, onClose, onSave }) {
       setError("Ingresa la tasa de interés mensual.");
       return;
     }
-    if (!form.start_date || !form.first_interest_date) {
-      setError("Selecciona las fechas del préstamo y del primer interés.");
+    if (!form.start_date || !form.next_interest_date) {
+      setError("Selecciona las fechas del préstamo y del próximo interés.");
       return;
     }
-    if (form.first_interest_date <= form.start_date) {
-      setError("La primera fecha de interés debe ser posterior al préstamo.");
+    if (form.next_interest_date <= form.start_date) {
+      setError("La próxima fecha de interés debe ser posterior al préstamo.");
       return;
     }
 
@@ -129,9 +129,9 @@ function NewLoanModal({ client, capitalOnHand, onClose, onSave }) {
           </div>
 
           <div className="interest-preview">
-            <span>Interés por mes</span>
+            <span>Interés inicial</span>
             <strong>{currency.format(monthlyInterest)}</strong>
-            <small>Calculado sobre el capital pendiente; no se capitaliza.</small>
+            <small>Se aplica al desembolsar. Los próximos cargos se calculan sobre el capital pendiente y no se capitalizan.</small>
           </div>
 
           <div className="form-grid">
@@ -140,8 +140,8 @@ function NewLoanModal({ client, capitalOnHand, onClose, onSave }) {
               <input onChange={changeStartDate} type="date" value={form.start_date} />
             </label>
             <label className="field">
-              <span>Primer interés</span>
-              <input min={form.start_date} onChange={update("first_interest_date")} type="date" value={form.first_interest_date} />
+              <span>Próximo interés</span>
+              <input min={form.start_date} onChange={update("next_interest_date")} type="date" value={form.next_interest_date} />
             </label>
           </div>
 
