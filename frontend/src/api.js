@@ -107,6 +107,17 @@ export function withdrawCapital(payload) {
   });
 }
 
+export function getCapitalEntries(limit = 50) {
+  return request(`/capital/entries?limit=${encodeURIComponent(limit)}`);
+}
+
+export function reverseCapitalEntry(entryId, payload) {
+  return request(`/capital/entries/${entryId}/reverse`, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
 export function getLoans(borrowerId) {
   const query = borrowerId ? `?borrower_id=${encodeURIComponent(borrowerId)}` : "";
   return request(`/loans${query}`);
@@ -133,6 +144,13 @@ export function getPaymentPreview(loanId, amountReceived, asOf) {
 
 export function recordPayment(loanId, payload) {
   return request(`/loans/${loanId}/payments`, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function reversePayment(loanId, paymentId, payload) {
+  return request(`/loans/${loanId}/payments/${paymentId}/reverse`, {
     method: "POST",
     body: JSON.stringify(payload),
   });
