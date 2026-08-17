@@ -5,7 +5,15 @@ from fastapi import HTTPException
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from ..models import CapitalLedgerEntry, InterestAccrual, LedgerEntryType, Loan, Payment
+from ..models import (
+    CapitalLedgerEntry,
+    InterestAccrual,
+    LedgerEntryType,
+    Loan,
+    LoanStatus,
+    Payment,
+    utc_now,
+)
 from ..schemas import PaymentCreate
 from .interest import add_month, calculate_monthly_interest, money
 
@@ -32,12 +40,19 @@ def accrue_due_interest(db: Session, loan: Loan, through_date: date) -> Decimal:
 
 
 def record_payment(db: Session, loan: Loan, payload: PaymentCreate) -> Payment:
+    if loan.status != LoanStatus.active:
+        raise HTTPException(status_code=422, detail="Payments can only be recorded on active loans")
+
     accrue_due_interest(db, loan, payload.received_at.date())
 
     if payload.amount_to_interest > loan.accrued_interest:
         raise HTTPException(status_code=422, detail="Interest allocation exceeds accrued interest")
     if payload.amount_to_principal > loan.principal_outstanding:
         raise HTTPException(status_code=422, detail="Principal allocation exceeds outstanding principal")
+
+    total_due = money(loan.accrued_interest + loan.principal_outstanding)
+    if payload.amount_received > total_due:
+        raise HTTPException(status_code=422, detail="Payment exceeds the total outstanding balance")
 
     unapplied = money(
         payload.amount_received - payload.amount_to_interest - payload.amount_to_principal
@@ -57,6 +72,10 @@ def record_payment(db: Session, loan: Loan, payload: PaymentCreate) -> Payment:
 
     loan.accrued_interest = money(loan.accrued_interest - payload.amount_to_interest)
     loan.principal_outstanding = money(loan.principal_outstanding - payload.amount_to_principal)
+
+    if loan.accrued_interest == 0 and loan.principal_outstanding == 0:
+        loan.status = LoanStatus.paid
+        loan.closed_at = utc_now()
 
     if payload.amount_to_interest:
         db.add(
@@ -89,4 +108,3 @@ def get_tenant_loan(db: Session, tenant_id: str, loan_id: str) -> Loan:
     if loan is None:
         raise HTTPException(status_code=404, detail="Loan not found")
     return loan
-
