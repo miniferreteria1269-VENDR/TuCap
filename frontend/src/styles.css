@@ -1046,6 +1046,139 @@ button {
   background: var(--surface);
 }
 
+.borrower-performance {
+  margin-top: 14px;
+  padding: 17px;
+  border: 1px solid rgba(80, 255, 154, 0.28);
+  border-radius: 18px;
+  background: linear-gradient(145deg, rgba(80, 255, 154, 0.08), var(--surface));
+}
+
+.borrower-performance.loss {
+  border-color: rgba(255, 107, 117, 0.28);
+  background: linear-gradient(145deg, rgba(255, 107, 117, 0.07), var(--surface));
+}
+
+.borrower-performance.no_closed_loans {
+  border-color: var(--border);
+  background: var(--surface);
+}
+
+.borrower-performance-heading,
+.borrower-result,
+.borrower-performance-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.borrower-performance-heading h3 {
+  margin-top: 4px;
+  font-size: 1rem;
+}
+
+.borrower-performance-heading > span {
+  max-width: 115px;
+  color: var(--muted);
+  font-size: 0.62rem;
+  line-height: 1.35;
+  text-align: right;
+}
+
+.borrower-result {
+  margin-top: 14px;
+  padding: 14px 0;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+
+.borrower-result > div {
+  display: grid;
+  gap: 4px;
+}
+
+.borrower-result span,
+.borrower-result small,
+.borrower-performance-grid span,
+.borrower-history-strip span,
+.borrower-performance-footer span,
+.borrower-judgment-note {
+  color: var(--muted);
+  font-size: 0.64rem;
+}
+
+.borrower-result strong {
+  color: var(--plasma);
+  font-size: 1.42rem;
+  letter-spacing: -0.035em;
+}
+
+.borrower-performance.loss .borrower-result strong {
+  color: #ff9ca4;
+}
+
+.borrower-performance-grid {
+  margin-top: 14px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.borrower-performance-grid > div {
+  display: grid;
+  gap: 4px;
+}
+
+.borrower-performance-grid strong {
+  font-size: 0.78rem;
+}
+
+.borrower-history-strip {
+  margin-top: 14px;
+  padding: 11px 8px;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: #07100c;
+}
+
+.borrower-history-strip > div {
+  padding: 0 4px;
+  display: grid;
+  gap: 3px;
+  border-right: 1px solid var(--border);
+  text-align: center;
+}
+
+.borrower-history-strip > div:last-child {
+  border-right: 0;
+}
+
+.borrower-history-strip strong {
+  font-size: 0.8rem;
+}
+
+.borrower-history-strip span {
+  line-height: 1.25;
+}
+
+.borrower-performance-footer {
+  margin-top: 12px;
+}
+
+.borrower-performance-footer strong {
+  font-size: 0.78rem;
+}
+
+.borrower-judgment-note {
+  margin: 12px 0 0;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+  line-height: 1.45;
+}
+
 .detail-section h3 {
   margin-top: 3px;
   font-size: 1rem;
