@@ -8,6 +8,8 @@ class Settings(BaseSettings):
     environment: str = "development"
     database_url: str = "sqlite:///./tucap.db"
     cors_origins: str = "http://localhost:5173"
+    bootstrap_tenant_id: str = "00000000-0000-0000-0000-000000000001"
+    bootstrap_tenant_name: str = "TuCap Pilot"
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
@@ -19,4 +21,3 @@ class Settings(BaseSettings):
 @lru_cache
 def get_settings() -> Settings:
     return Settings()
-
