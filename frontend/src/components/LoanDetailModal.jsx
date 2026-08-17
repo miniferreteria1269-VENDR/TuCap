@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 
-import { getLoanDetail } from "../api";
+import { getLoanDetail, reversePayment } from "../api";
 import ClosedLoanActionModal from "./ClosedLoanActionModal";
+import ReversalModal from "./ReversalModal";
 import WriteOffModal from "./WriteOffModal";
 
 const currency = new Intl.NumberFormat("es-SV", { style: "currency", currency: "USD" });
@@ -21,6 +22,7 @@ function LoanDetailModal({ client, loan, onClose, onReceivePayment, onMutated })
   const [detail, setDetail] = useState(null);
   const [error, setError] = useState("");
   const [action, setAction] = useState(null);
+  const [reversalPayment, setReversalPayment] = useState(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -41,6 +43,7 @@ function LoanDetailModal({ client, loan, onClose, onReceivePayment, onMutated })
 
   if (action === "write-off") return <WriteOffModal client={client} loan={current} onClose={() => setAction(null)} onComplete={completeAction} />;
   if (action === "recovery" || action === "performance") return <ClosedLoanActionModal loan={current} mode={action} onClose={() => setAction(null)} onComplete={completeAction} />;
+  if (reversalPayment) return <ReversalModal amount={reversalPayment.amount_received} description={`Pago del ${formatDateTime(reversalPayment.received_at)}`} onClose={() => setReversalPayment(null)} onConfirm={async (payload) => { const updated = await reversePayment(current.id, reversalPayment.id, payload); setReversalPayment(null); completeAction(updated); }} />;
 
   return (
     <div className="modal-backdrop" role="presentation" onMouseDown={onClose}>
@@ -105,10 +108,11 @@ function LoanDetailModal({ client, loan, onClose, onReceivePayment, onMutated })
               {detail.payments.length === 0 ? <p className="history-empty">Todavía no hay pagos registrados.</p> : (
                 <div className="payment-history-list">
                   {detail.payments.map((payment) => (
-                    <article key={payment.id}>
+                    <article className={payment.reversed_at ? "reversed-record" : ""} key={payment.id}>
                       <div><strong>{currency.format(payment.amount_received)}</strong><time>{formatDateTime(payment.received_at)}</time></div>
                       <dl><div><dt>Interés</dt><dd>{currency.format(payment.amount_to_interest)}</dd></div><div><dt>Capital</dt><dd>{currency.format(payment.amount_to_principal)}</dd></div></dl>
                       {payment.notes && <p>{payment.notes}</p>}
+                      {payment.reversed_at ? <div className="reversal-stamp"><strong>Anulado</strong><span>{formatDateTime(payment.reversed_at)} · {payment.reversal_reason}</span></div> : <button className="reverse-record-button" type="button" onClick={() => setReversalPayment(payment)}>Anular pago</button>}
                     </article>
                   ))}
                 </div>
