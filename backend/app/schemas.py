@@ -1,7 +1,7 @@
 from datetime import date, datetime, timezone
 from decimal import Decimal
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import AliasChoices, BaseModel, ConfigDict, Field, model_validator
 
 from .models import BorrowerStatus, LoanStatus
 
@@ -37,15 +37,18 @@ class LoanCreate(BaseModel):
     original_principal: Decimal = Field(gt=0)
     monthly_interest_rate: Decimal = Field(ge=0)
     start_date: date
-    first_interest_date: date | None = None
+    next_interest_date: date | None = Field(
+        default=None,
+        validation_alias=AliasChoices("next_interest_date", "first_interest_date"),
+    )
     collateral_description: str | None = None
     collateral_estimated_value: Decimal | None = Field(default=None, ge=0)
     notes: str | None = None
 
     @model_validator(mode="after")
-    def first_interest_must_follow_start(self) -> "LoanCreate":
-        if self.first_interest_date is not None and self.first_interest_date <= self.start_date:
-            raise ValueError("First interest date must be after the loan date")
+    def next_interest_must_follow_start(self) -> "LoanCreate":
+        if self.next_interest_date is not None and self.next_interest_date <= self.start_date:
+            raise ValueError("Next interest date must be after the loan date")
         return self
 
 
