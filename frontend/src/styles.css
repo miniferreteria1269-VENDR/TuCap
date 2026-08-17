@@ -817,6 +817,124 @@ button {
   background: rgba(255, 193, 92, 0.08);
 }
 
+.reversal-target {
+  margin-bottom: 14px;
+  padding: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  border: 1px solid var(--border);
+  border-radius: 13px;
+  background: #07100c;
+}
+
+.reversal-target > div {
+  display: grid;
+  gap: 4px;
+}
+
+.reversal-target span,
+.reversal-target > div strong {
+  font-size: 0.7rem;
+}
+
+.reversal-target span {
+  color: var(--muted);
+}
+
+.reversal-target > strong {
+  color: #ff9ca4;
+  font-size: 1.1rem;
+}
+
+.reversed-record {
+  opacity: 0.68;
+}
+
+.reversed-record > div:first-child > strong,
+.reversed-record .capital-entry-main > strong {
+  text-decoration: line-through;
+}
+
+.reversal-stamp {
+  margin-top: 9px;
+  padding: 9px 10px;
+  display: grid !important;
+  gap: 3px !important;
+  border: 1px solid rgba(255, 107, 117, 0.24);
+  border-radius: 9px;
+  background: rgba(255, 107, 117, 0.06);
+}
+
+.reversal-stamp strong {
+  color: #ff9ca4;
+  font-size: 0.65rem;
+  text-transform: uppercase;
+}
+
+.reversal-stamp span {
+  color: var(--muted);
+  font-size: 0.62rem;
+  line-height: 1.4;
+}
+
+.reverse-record-button {
+  margin-top: 9px;
+  padding: 7px 9px;
+  border: 1px solid rgba(255, 107, 117, 0.24);
+  border-radius: 9px;
+  color: #ff9ca4;
+  background: rgba(255, 107, 117, 0.06);
+  font-size: 0.65rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.capital-entry-list {
+  margin-top: 13px;
+  display: grid;
+  gap: 8px;
+}
+
+.capital-entry-list article {
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: #07100c;
+}
+
+.capital-entry-main {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.capital-entry-main > div {
+  display: grid;
+  gap: 4px;
+}
+
+.capital-entry-main time,
+.capital-entry-list article > p {
+  color: var(--muted);
+  font-size: 0.64rem;
+}
+
+.capital-entry-main > strong.positive {
+  color: var(--plasma);
+}
+
+.capital-entry-main > strong.negative {
+  color: #ff9ca4;
+}
+
+.capital-entry-list article > p {
+  margin: 8px 0 0;
+  line-height: 1.4;
+}
+
 .dashboard-error {
   margin: 12px 0 0;
   border: 1px solid rgba(255, 107, 117, 0.3);
