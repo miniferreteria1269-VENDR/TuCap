@@ -1,15 +1,22 @@
-from datetime import datetime, timezone
+from datetime import date, datetime, time, timedelta, timezone
 from decimal import Decimal
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from ..database import get_db
 from ..dependencies import get_current_user, require_tenant_id
 from ..models import CapitalLedgerEntry, FinancialReversal, LedgerEntryType, Loan, LoanStatus, Payment, Tenant, User
-from ..schemas import CapitalDepositCreate, CapitalEntryRead, CapitalSummary, CapitalWithdrawalCreate, ReversalCreate
+from ..schemas import (
+    CapitalDepositCreate,
+    CapitalEntryRead,
+    CapitalPeriodReport,
+    CapitalSummary,
+    CapitalWithdrawalCreate,
+    ReversalCreate,
+)
 from ..services.interest import money
 
 
@@ -62,6 +69,124 @@ def get_capital_summary(
     )
 
 
+@router.get("/report", response_model=CapitalPeriodReport)
+def get_capital_period_report(
+    date_from: Annotated[date, Query()],
+    date_to: Annotated[date, Query()],
+    tenant_id: Annotated[str, Depends(require_tenant_id)],
+    db: Annotated[Session, Depends(get_db)],
+) -> CapitalPeriodReport:
+    if date_to < date_from:
+        raise HTTPException(status_code=422, detail="La fecha final no puede ser anterior a la inicial")
+
+    range_start = datetime.combine(date_from, time.min, tzinfo=timezone.utc)
+    range_end = datetime.combine(date_to + timedelta(days=1), time.min, tzinfo=timezone.utc)
+    reversed_payment_ids = select(FinancialReversal.payment_id).where(
+        FinancialReversal.tenant_id == tenant_id,
+        FinancialReversal.payment_id.is_not(None),
+    )
+    principal_collected, interest_collected, payments_collected = db.execute(
+        select(
+            func.coalesce(func.sum(Payment.amount_to_principal), 0),
+            func.coalesce(func.sum(Payment.amount_to_interest), 0),
+            func.coalesce(func.sum(Payment.amount_received), 0),
+        ).where(
+            Payment.tenant_id == tenant_id,
+            Payment.received_at >= range_start,
+            Payment.received_at < range_end,
+            Payment.id.not_in(reversed_payment_ids),
+        )
+    ).one()
+
+    capital_lent, new_loans = db.execute(
+        select(func.coalesce(func.sum(Loan.original_principal), 0), func.count(Loan.id)).where(
+            Loan.tenant_id == tenant_id,
+            Loan.start_date >= date_from,
+            Loan.start_date <= date_to,
+        )
+    ).one()
+
+    reversed_ledger_ids = select(FinancialReversal.ledger_entry_id).where(
+        FinancialReversal.tenant_id == tenant_id,
+        FinancialReversal.ledger_entry_id.is_not(None),
+    )
+    ledger_rows = db.execute(
+        select(CapitalLedgerEntry.entry_type, func.coalesce(func.sum(CapitalLedgerEntry.amount), 0))
+        .where(
+            CapitalLedgerEntry.tenant_id == tenant_id,
+            CapitalLedgerEntry.occurred_at >= range_start,
+            CapitalLedgerEntry.occurred_at < range_end,
+            CapitalLedgerEntry.entry_type.in_([
+                LedgerEntryType.capital_deposit,
+                LedgerEntryType.withdrawal,
+                LedgerEntryType.collateral_recovery,
+            ]),
+            CapitalLedgerEntry.id.not_in(reversed_ledger_ids),
+        )
+        .group_by(CapitalLedgerEntry.entry_type)
+    ).all()
+    ledger_totals = {entry_type: Decimal(amount or 0) for entry_type, amount in ledger_rows}
+
+    closed_loans = list(
+        db.scalars(
+            select(Loan).where(
+                Loan.tenant_id == tenant_id,
+                Loan.status.in_([LoanStatus.paid, LoanStatus.written_off]),
+                Loan.closed_at >= range_start,
+                Loan.closed_at < range_end,
+            )
+        )
+    )
+    closed_loan_ids = [loan.id for loan in closed_loans]
+    recovered_by_loan: dict[str, Decimal] = {}
+    if closed_loan_ids:
+        payment_rows = db.execute(
+            select(Payment.loan_id, func.coalesce(func.sum(Payment.amount_received), 0))
+            .where(
+                Payment.tenant_id == tenant_id,
+                Payment.loan_id.in_(closed_loan_ids),
+                Payment.id.not_in(reversed_payment_ids),
+            )
+            .group_by(Payment.loan_id)
+        ).all()
+        for loan_id, amount in payment_rows:
+            recovered_by_loan[loan_id] = Decimal(amount or 0)
+        collateral_rows = db.execute(
+            select(CapitalLedgerEntry.loan_id, func.coalesce(func.sum(CapitalLedgerEntry.amount), 0))
+            .where(
+                CapitalLedgerEntry.tenant_id == tenant_id,
+                CapitalLedgerEntry.loan_id.in_(closed_loan_ids),
+                CapitalLedgerEntry.entry_type == LedgerEntryType.collateral_recovery,
+                CapitalLedgerEntry.id.not_in(reversed_ledger_ids),
+            )
+            .group_by(CapitalLedgerEntry.loan_id)
+        ).all()
+        for loan_id, amount in collateral_rows:
+            recovered_by_loan[loan_id] = recovered_by_loan.get(loan_id, Decimal("0")) + Decimal(amount or 0)
+
+    closed_principal_lent = sum((loan.original_principal for loan in closed_loans), Decimal("0"))
+    closed_total_recovered = sum(
+        (recovered_by_loan.get(loan.id, Decimal("0")) for loan in closed_loans), Decimal("0")
+    )
+
+    return CapitalPeriodReport(
+        date_from=date_from,
+        date_to=date_to,
+        payments_collected=money(Decimal(payments_collected or 0)),
+        interest_collected=money(Decimal(interest_collected or 0)),
+        principal_collected=money(Decimal(principal_collected or 0)),
+        capital_lent=money(Decimal(capital_lent or 0)),
+        new_loans=int(new_loans or 0),
+        capital_deposited=money(ledger_totals.get(LedgerEntryType.capital_deposit, Decimal("0"))),
+        capital_withdrawn=money(abs(ledger_totals.get(LedgerEntryType.withdrawal, Decimal("0")))),
+        collateral_recovered=money(ledger_totals.get(LedgerEntryType.collateral_recovery, Decimal("0"))),
+        loans_closed=len(closed_loans),
+        loans_paid=sum(loan.status == LoanStatus.paid for loan in closed_loans),
+        loans_written_off=sum(loan.status == LoanStatus.written_off for loan in closed_loans),
+        closed_principal_lent=money(closed_principal_lent),
+        closed_total_recovered=money(closed_total_recovered),
+        realized_economic_result=money(closed_total_recovered - closed_principal_lent),
+    )
 @router.post("/deposits", response_model=CapitalEntryRead, status_code=status.HTTP_201_CREATED)
 def add_capital(
     payload: CapitalDepositCreate,
