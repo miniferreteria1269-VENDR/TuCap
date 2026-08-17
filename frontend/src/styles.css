@@ -83,6 +83,7 @@ button {
 .auth-form { margin-top: 27px; display: grid; gap: 17px; }
 .auth-submit { width: 100%; min-height: 50px; margin-top: 4px; }
 .auth-security-note { margin: 20px 0 0; text-align: center; font-size: 0.72rem; line-height: 1.45; }
+.session-notice { margin: 0; padding: 11px 12px; border: 1px solid rgba(80, 255, 154, 0.25); border-radius: 11px; color: var(--plasma); background: var(--plasma-soft); font-size: 0.78rem; line-height: 1.4; }
 .session-loader { display: grid; justify-items: center; gap: 15px; color: var(--muted); }
 .disclaimer-card { text-align: left; }
 .disclaimer-icon { width: 48px; height: 48px; margin: 34px 0 18px; display: grid; place-items: center; border: 1px solid rgba(80, 255, 154, 0.35); border-radius: 50%; color: var(--plasma); background: var(--plasma-soft); font-family: Georgia, serif; font-size: 1.5rem; font-weight: 800; }
