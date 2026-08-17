@@ -14,7 +14,8 @@ class Settings(BaseSettings):
     bootstrap_admin_password: str | None = None
     bootstrap_admin_name: str = "Administrador"
     jwt_secret: str | None = None
-    jwt_expire_minutes: int = 720
+    jwt_expire_minutes: int = 480
+    session_idle_minutes: int = 5
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
