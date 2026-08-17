@@ -2,7 +2,7 @@ import { useState } from "react";
 
 import { login, setAccessToken } from "../api";
 
-function LoginPage({ onLogin }) {
+function LoginPage({ notice, onLogin }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -43,6 +43,7 @@ function LoginPage({ onLogin }) {
             <span>Contraseña</span>
             <input autoComplete="current-password" minLength="12" onChange={(event) => setPassword(event.target.value)} placeholder="••••••••••••" required type="password" value={password} />
           </label>
+          {notice && <p className="session-notice" role="status">{notice}</p>}
           {error && <p className="form-error" role="alert">{error}</p>}
           <button className="primary-button auth-submit" disabled={submitting} type="submit">{submitting ? "Ingresando…" : "Ingresar"}</button>
         </form>
