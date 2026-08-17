@@ -29,6 +29,11 @@ class LoanStatus(str, enum.Enum):
     written_off = "written_off"
 
 
+class LoanClosureReason(str, enum.Enum):
+    paid = "paid"
+    written_off = "written_off"
+
+
 class LedgerEntryType(str, enum.Enum):
     capital_deposit = "capital_deposit"
     loan_disbursement = "loan_disbursement"
@@ -138,6 +143,25 @@ class Loan(Base):
     borrower: Mapped[Borrower] = relationship(back_populates="loans")
     interest_accruals: Mapped[list["InterestAccrual"]] = relationship(back_populates="loan")
     payments: Mapped[list["Payment"]] = relationship(back_populates="loan")
+
+
+class LoanClosure(Base):
+    __tablename__ = "loan_closures"
+    __table_args__ = (Index("ux_loan_closures_loan", "loan_id", unique=True),)
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uuid_string)
+    tenant_id: Mapped[str] = mapped_column(ForeignKey("tenants.id"), index=True, nullable=False)
+    loan_id: Mapped[str] = mapped_column(ForeignKey("loans.id"), nullable=False)
+    reason: Mapped[LoanClosureReason] = mapped_column(Enum(LoanClosureReason), nullable=False)
+    closed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    principal_shortfall: Mapped[Decimal] = mapped_column(Numeric(14, 2), default=Decimal("0.00"), nullable=False)
+    interest_shortfall: Mapped[Decimal] = mapped_column(Numeric(14, 2), default=Decimal("0.00"), nullable=False)
+    late_payment_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    notes: Mapped[str | None] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utc_now, onupdate=utc_now, nullable=False
+    )
 
 
 class InterestAccrual(Base):
