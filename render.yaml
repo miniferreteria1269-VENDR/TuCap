@@ -24,6 +24,14 @@ services:
         value: 00000000-0000-0000-0000-000000000001
       - key: BOOTSTRAP_TENANT_NAME
         value: TuCap Pilot
+      - key: JWT_SECRET
+        generateValue: true
+      - key: BOOTSTRAP_ADMIN_EMAIL
+        sync: false
+      - key: BOOTSTRAP_ADMIN_PASSWORD
+        sync: false
+      - key: BOOTSTRAP_ADMIN_NAME
+        value: Administrador
 
 databases:
   - name: tucap-db
