@@ -58,7 +58,7 @@ const emptyReport = {
   realized_economic_result: 0,
 };
 
-function Dashboard() {
+function Dashboard({ focusTarget }) {
   const [summary, setSummary] = useState(emptySummary);
   const [showCapitalForm, setShowCapitalForm] = useState(false);
   const [showWithdrawalForm, setShowWithdrawalForm] = useState(false);
@@ -109,6 +109,14 @@ function Dashboard() {
       cancelled = true;
     };
   }, [dateFrom, dateTo]);
+
+  useEffect(() => {
+    if (!focusTarget) return undefined;
+    const frameId = window.requestAnimationFrame(() => {
+      document.getElementById(focusTarget)?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+    return () => window.cancelAnimationFrame(frameId);
+  }, [focusTarget]);
 
   const choosePreset = (preset) => {
     const nextRange = rangeFor(preset);
@@ -161,7 +169,7 @@ function Dashboard() {
         <MetricCard label="Cobrado este mes" value={currency.format(summary.collected_this_month)} detail="Interés + capital" />
       </section>
 
-      <section className="section-block period-report">
+      <section className="section-block period-report" id="period-report">
         <div className="section-heading">
           <div><p className="eyebrow">Análisis</p><h3>Actividad del período</h3></div>
           <span className="period-range">{shortDate.format(new Date(`${dateFrom}T12:00:00`))} – {shortDate.format(new Date(`${dateTo}T12:00:00`))}</span>
@@ -198,7 +206,7 @@ function Dashboard() {
         </>}
       </section>
 
-      <section className="section-block capital-activity">
+      <section className="section-block capital-activity" id="capital-activity">
         <div className="section-heading">
           <div>
             <p className="eyebrow">Actividad</p>
