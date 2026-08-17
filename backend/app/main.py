@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from .config import get_settings
 from .database import Base, engine
-from .routers import borrowers, loans
+from .routers import borrowers, capital, loans
 from .schemas import HealthResponse
 
 
@@ -19,6 +19,7 @@ app.add_middleware(
 )
 
 app.include_router(borrowers.router, prefix="/api")
+app.include_router(capital.router, prefix="/api")
 app.include_router(loans.router, prefix="/api")
 
 
@@ -30,4 +31,3 @@ def create_tables() -> None:
 @app.get("/api/health", response_model=HealthResponse)
 def health() -> HealthResponse:
     return HealthResponse(status="ok", service=settings.app_name)
-
