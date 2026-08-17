@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 
 import { createLoan, getBorrower, getCapitalSummary, getLoans } from "../api";
+import LoanDetailModal from "../components/LoanDetailModal";
 import NewLoanModal from "../components/NewLoanModal";
 import ReceivePaymentModal from "../components/ReceivePaymentModal";
 
@@ -28,6 +29,7 @@ function ClientDetail({ client, onBack, onClientUpdated }) {
   const [loanError, setLoanError] = useState("");
   const [showLoanForm, setShowLoanForm] = useState(false);
   const [paymentLoan, setPaymentLoan] = useState(null);
+  const [detailLoan, setDetailLoan] = useState(null);
 
   const refreshPortfolio = async () => {
     const [loanRows, capital, refreshedClient] = await Promise.all([
@@ -145,11 +147,10 @@ function ClientDetail({ client, onBack, onClientUpdated }) {
                   <span>Interés acumulado <strong>{money.format(loan.accrued_interest)}</strong></span>
                   <span>Próximo interés <strong>{formatDate(loan.next_interest_date)}</strong></span>
                 </div>
-                {loan.status === "active" && (
-                  <button className="receive-payment-button" type="button" onClick={() => setPaymentLoan(loan)}>
-                    Recibir pago
-                  </button>
-                )}
+                <div className="loan-card-actions">
+                  <button className="loan-detail-button" type="button" onClick={() => setDetailLoan(loan)}>Ver detalle</button>
+                  {loan.status === "active" && <button className="receive-payment-button" type="button" onClick={() => setPaymentLoan(loan)}>Recibir pago</button>}
+                </div>
               </article>
             ))}
           </div>
@@ -170,6 +171,17 @@ function ClientDetail({ client, onBack, onClientUpdated }) {
           loan={paymentLoan}
           onClose={() => setPaymentLoan(null)}
           onComplete={completePayment}
+        />
+      )}
+      {detailLoan && (
+        <LoanDetailModal
+          client={client}
+          loan={detailLoan}
+          onClose={() => setDetailLoan(null)}
+          onReceivePayment={(selectedLoan) => {
+            setDetailLoan(null);
+            setPaymentLoan(selectedLoan);
+          }}
         />
       )}
     </section>
