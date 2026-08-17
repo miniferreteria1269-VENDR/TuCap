@@ -10,9 +10,10 @@ from ..models import (
     InterestAccrual,
     LedgerEntryType,
     Loan,
+    LoanClosure,
+    LoanClosureReason,
     LoanStatus,
     Payment,
-    utc_now,
 )
 from ..schemas import PaymentCreate
 from .interest import add_month, calculate_monthly_interest, money
@@ -92,7 +93,17 @@ def record_payment(db: Session, loan: Loan, payload: PaymentCreate) -> Payment:
 
     if loan.accrued_interest == 0 and loan.principal_outstanding == 0:
         loan.status = LoanStatus.paid
-        loan.closed_at = utc_now()
+        loan.closed_at = payload.received_at
+        db.add(
+            LoanClosure(
+                tenant_id=loan.tenant_id,
+                loan_id=loan.id,
+                reason=LoanClosureReason.paid,
+                closed_at=loan.closed_at,
+                principal_shortfall=Decimal("0.00"),
+                interest_shortfall=Decimal("0.00"),
+            )
+        )
 
     if payload.amount_to_interest:
         db.add(
