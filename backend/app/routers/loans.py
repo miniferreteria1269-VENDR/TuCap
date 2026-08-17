@@ -8,9 +8,17 @@ from sqlalchemy.orm import Session
 
 from ..database import get_db
 from ..dependencies import require_tenant_id
-from ..models import Borrower, CapitalLedgerEntry, LedgerEntryType, Loan
-from ..schemas import LoanCreate, LoanRead, PaymentCreate, PaymentPreview, PaymentResult
-from ..services.interest import add_month, suggested_payment_allocation
+from ..models import Borrower, CapitalLedgerEntry, InterestAccrual, LedgerEntryType, Loan, Payment
+from ..schemas import (
+    LoanCreate,
+    LoanDetailRead,
+    LoanRead,
+    PaymentCreate,
+    PaymentPreview,
+    PaymentRead,
+    PaymentResult,
+)
+from ..services.interest import add_month, money, suggested_payment_allocation
 from ..services.loans import (
     accrue_due_interest,
     get_tenant_loan,
@@ -67,6 +75,40 @@ def create_loan(
     db.commit()
     db.refresh(loan)
     return loan
+
+
+@router.get("/{loan_id}", response_model=LoanDetailRead)
+def get_loan_detail(
+    loan_id: str,
+    tenant_id: Annotated[str, Depends(require_tenant_id)],
+    db: Annotated[Session, Depends(get_db)],
+) -> LoanDetailRead:
+    loan = get_tenant_loan(db, tenant_id, loan_id)
+    payments = list(
+        db.scalars(
+            select(Payment)
+            .where(Payment.tenant_id == tenant_id, Payment.loan_id == loan.id)
+            .order_by(Payment.received_at.desc(), Payment.created_at.desc())
+        )
+    )
+    accruals = list(
+        db.scalars(
+            select(InterestAccrual)
+            .where(InterestAccrual.tenant_id == tenant_id, InterestAccrual.loan_id == loan.id)
+            .order_by(InterestAccrual.cycle_date.desc())
+        )
+    )
+    interest_collected = money(sum((payment.amount_to_interest for payment in payments), Decimal("0")))
+    principal_collected = money(sum((payment.amount_to_principal for payment in payments), Decimal("0")))
+
+    return LoanDetailRead(
+        **LoanRead.model_validate(loan).model_dump(),
+        payments=[PaymentRead.model_validate(payment) for payment in payments],
+        interest_accruals=accruals,
+        total_interest_collected=interest_collected,
+        total_principal_collected=principal_collected,
+        total_collected=money(interest_collected + principal_collected),
+    )
 
 
 @router.get("/{loan_id}/payment-preview", response_model=PaymentPreview)
