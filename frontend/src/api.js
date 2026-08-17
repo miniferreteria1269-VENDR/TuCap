@@ -82,6 +82,10 @@ export function getBorrower(borrowerId) {
   return request(`/borrowers/${borrowerId}`);
 }
 
+export function getBorrowerPerformance(borrowerId) {
+  return request(`/borrowers/${borrowerId}/performance`);
+}
+
 export function createBorrower(payload) {
   return request("/borrowers", {
     method: "POST",
