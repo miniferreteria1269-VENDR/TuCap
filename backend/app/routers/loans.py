@@ -7,10 +7,11 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from ..database import get_db
-from ..dependencies import require_tenant_id
+from ..dependencies import get_current_user, require_tenant_id
 from ..models import (
     Borrower,
     CapitalLedgerEntry,
+    FinancialReversal,
     InterestAccrual,
     LedgerEntryType,
     Loan,
@@ -18,6 +19,7 @@ from ..models import (
     LoanClosureReason,
     LoanStatus,
     Payment,
+    User,
 )
 from ..schemas import (
     CollateralRecoveryCreate,
@@ -31,6 +33,7 @@ from ..schemas import (
     PaymentPreview,
     PaymentRead,
     PaymentResult,
+    ReversalCreate,
 )
 from ..services.interest import add_month, money, suggested_payment_allocation
 from ..services.loans import (
@@ -58,11 +61,16 @@ def build_performance(db: Session, loan: Loan, payments_collected: Decimal, accr
     if closed_at is None:
         return None
 
+    reversed_ledger_ids = select(FinancialReversal.ledger_entry_id).where(
+        FinancialReversal.tenant_id == loan.tenant_id,
+        FinancialReversal.ledger_entry_id.is_not(None),
+    )
     collateral = db.scalar(
         select(func.coalesce(func.sum(CapitalLedgerEntry.amount), 0)).where(
             CapitalLedgerEntry.tenant_id == loan.tenant_id,
             CapitalLedgerEntry.loan_id == loan.id,
             CapitalLedgerEntry.entry_type == LedgerEntryType.collateral_recovery,
+            CapitalLedgerEntry.id.not_in(reversed_ledger_ids),
         )
     )
     collateral_recovered = money(Decimal(collateral or 0))
@@ -150,6 +158,16 @@ def get_loan_detail(
             .order_by(Payment.received_at.desc(), Payment.created_at.desc())
         )
     )
+    reversals = list(
+        db.scalars(
+            select(FinancialReversal).where(
+                FinancialReversal.tenant_id == tenant_id,
+                FinancialReversal.payment_id.in_([payment.id for payment in payments]),
+            )
+        )
+    ) if payments else []
+    reversal_by_payment = {reversal.payment_id: reversal for reversal in reversals}
+    active_payments = [payment for payment in payments if payment.id not in reversal_by_payment]
     accruals = list(
         db.scalars(
             select(InterestAccrual)
@@ -157,12 +175,20 @@ def get_loan_detail(
             .order_by(InterestAccrual.cycle_date.desc())
         )
     )
-    interest_collected = money(sum((payment.amount_to_interest for payment in payments), Decimal("0")))
-    principal_collected = money(sum((payment.amount_to_principal for payment in payments), Decimal("0")))
+    interest_collected = money(sum((payment.amount_to_interest for payment in active_payments), Decimal("0")))
+    principal_collected = money(sum((payment.amount_to_principal for payment in active_payments), Decimal("0")))
 
     return LoanDetailRead(
         **LoanRead.model_validate(loan).model_dump(),
-        payments=[PaymentRead.model_validate(payment) for payment in payments],
+        payments=[
+            PaymentRead.model_validate(payment).model_copy(
+                update={
+                    "reversed_at": reversal_by_payment[payment.id].reversed_at if payment.id in reversal_by_payment else None,
+                    "reversal_reason": reversal_by_payment[payment.id].reason if payment.id in reversal_by_payment else None,
+                }
+            )
+            for payment in payments
+        ],
         interest_accruals=accruals,
         total_interest_collected=interest_collected,
         total_principal_collected=principal_collected,
@@ -192,18 +218,19 @@ def write_off_loan(
     accrue_due_interest(db, loan, payload.closed_at.date())
     loan.status = LoanStatus.written_off
     loan.closed_at = payload.closed_at
-    db.add(
-        LoanClosure(
+    closure = db.scalar(select(LoanClosure).where(LoanClosure.loan_id == loan.id))
+    if closure is None:
+        closure = LoanClosure(
             tenant_id=tenant_id,
             loan_id=loan.id,
-            reason=LoanClosureReason.written_off,
-            closed_at=payload.closed_at,
-            principal_shortfall=money(loan.principal_outstanding),
-            interest_shortfall=money(loan.accrued_interest),
-            late_payment_count=payload.late_payment_count,
-            notes=payload.notes,
         )
-    )
+        db.add(closure)
+    closure.reason = LoanClosureReason.written_off
+    closure.closed_at = payload.closed_at
+    closure.principal_shortfall = money(loan.principal_outstanding)
+    closure.interest_shortfall = money(loan.accrued_interest)
+    closure.late_payment_count = payload.late_payment_count
+    closure.notes = payload.notes
     if payload.collateral_recovery_amount:
         db.add(
             CapitalLedgerEntry(
@@ -313,3 +340,72 @@ def receive_payment(
     db.refresh(payment)
     db.refresh(loan)
     return PaymentResult(payment=payment, loan=loan)
+
+
+@router.post("/{loan_id}/payments/{payment_id}/reverse", response_model=LoanDetailRead)
+def reverse_payment(
+    loan_id: str,
+    payment_id: str,
+    payload: ReversalCreate,
+    tenant_id: Annotated[str, Depends(require_tenant_id)],
+    user: Annotated[User, Depends(get_current_user)],
+    db: Annotated[Session, Depends(get_db)],
+) -> LoanDetailRead:
+    loan = get_tenant_loan(db, tenant_id, loan_id)
+    payment = db.scalar(
+        select(Payment).where(
+            Payment.id == payment_id,
+            Payment.loan_id == loan.id,
+            Payment.tenant_id == tenant_id,
+        )
+    )
+    if payment is None:
+        raise HTTPException(status_code=404, detail="Pago no encontrado")
+    if db.scalar(select(FinancialReversal).where(FinancialReversal.payment_id == payment.id)):
+        raise HTTPException(status_code=422, detail="Este pago ya fue anulado")
+    later_accrual = db.scalar(
+        select(InterestAccrual.id).where(
+            InterestAccrual.tenant_id == tenant_id,
+            InterestAccrual.loan_id == loan.id,
+            InterestAccrual.cycle_date > payment.received_at.date(),
+        ).limit(1)
+    )
+    if later_accrual is not None:
+        raise HTTPException(
+            status_code=422,
+            detail="Este pago no puede anularse porque ya se calculó un ciclo de interés posterior",
+        )
+
+    db.add(
+        FinancialReversal(
+            tenant_id=tenant_id,
+            payment_id=payment.id,
+            reversed_by_user_id=user.id,
+            reason=payload.reason.strip(),
+            reversed_at=payload.reversed_at,
+        )
+    )
+    db.add(
+        CapitalLedgerEntry(
+            tenant_id=tenant_id,
+            entry_type=LedgerEntryType.adjustment,
+            amount=-money(payment.amount_received),
+            loan_id=loan.id,
+            payment_id=payment.id,
+            occurred_at=payload.reversed_at,
+            notes=f"Reversal: {payload.reason.strip()}",
+        )
+    )
+    loan.principal_outstanding = money(loan.principal_outstanding + payment.amount_to_principal)
+    loan.accrued_interest = money(loan.accrued_interest + payment.amount_to_interest)
+
+    closure = db.scalar(select(LoanClosure).where(LoanClosure.loan_id == loan.id))
+    if loan.status == LoanStatus.paid:
+        loan.status = LoanStatus.active
+        loan.closed_at = None
+    elif loan.status == LoanStatus.written_off and closure is not None:
+        closure.principal_shortfall = money(loan.principal_outstanding)
+        closure.interest_shortfall = money(loan.accrued_interest)
+
+    db.commit()
+    return get_loan_detail(loan.id, tenant_id, db)
