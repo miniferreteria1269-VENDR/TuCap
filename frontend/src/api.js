@@ -100,6 +100,13 @@ export function addCapital(payload) {
   });
 }
 
+export function withdrawCapital(payload) {
+  return request("/capital/withdrawals", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
 export function getLoans(borrowerId) {
   const query = borrowerId ? `?borrower_id=${encodeURIComponent(borrowerId)}` : "";
   return request(`/loans${query}`);
@@ -110,6 +117,10 @@ export function createLoan(payload) {
     method: "POST",
     body: JSON.stringify(payload),
   });
+}
+
+export function getLoanDetail(loanId) {
+  return request(`/loans/${loanId}`);
 }
 
 export function getPaymentPreview(loanId, amountReceived, asOf) {
