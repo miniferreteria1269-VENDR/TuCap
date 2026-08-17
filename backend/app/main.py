@@ -13,6 +13,15 @@ from .services.auth import bootstrap_pilot_user
 settings = get_settings()
 app = FastAPI(title=settings.app_name, version="0.1.0")
 
+
+@app.middleware("http")
+async def prevent_sensitive_response_caching(request, call_next):
+    response = await call_next(request)
+    if request.url.path.startswith("/api/"):
+        response.headers["Cache-Control"] = "no-store"
+        response.headers["Pragma"] = "no-cache"
+    return response
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origin_list,
