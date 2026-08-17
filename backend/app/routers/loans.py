@@ -3,16 +3,30 @@ from decimal import Decimal
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from ..database import get_db
 from ..dependencies import require_tenant_id
-from ..models import Borrower, CapitalLedgerEntry, InterestAccrual, LedgerEntryType, Loan, Payment
+from ..models import (
+    Borrower,
+    CapitalLedgerEntry,
+    InterestAccrual,
+    LedgerEntryType,
+    Loan,
+    LoanClosure,
+    LoanClosureReason,
+    LoanStatus,
+    Payment,
+)
 from ..schemas import (
+    CollateralRecoveryCreate,
     LoanCreate,
     LoanDetailRead,
+    LoanPerformanceRead,
+    LoanPerformanceUpdate,
     LoanRead,
+    LoanWriteOffCreate,
     PaymentCreate,
     PaymentPreview,
     PaymentRead,
@@ -28,6 +42,51 @@ from ..services.loans import (
 
 
 router = APIRouter(prefix="/loans", tags=["loans"])
+
+
+def build_performance(db: Session, loan: Loan, payments_collected: Decimal, accrual_count: int) -> LoanPerformanceRead | None:
+    if loan.status == LoanStatus.active:
+        return None
+
+    closure = db.scalar(
+        select(LoanClosure).where(
+            LoanClosure.tenant_id == loan.tenant_id,
+            LoanClosure.loan_id == loan.id,
+        )
+    )
+    closed_at = closure.closed_at if closure else loan.closed_at
+    if closed_at is None:
+        return None
+
+    collateral = db.scalar(
+        select(func.coalesce(func.sum(CapitalLedgerEntry.amount), 0)).where(
+            CapitalLedgerEntry.tenant_id == loan.tenant_id,
+            CapitalLedgerEntry.loan_id == loan.id,
+            CapitalLedgerEntry.entry_type == LedgerEntryType.collateral_recovery,
+        )
+    )
+    collateral_recovered = money(Decimal(collateral or 0))
+    total_recovered = money(payments_collected + collateral_recovered)
+    economic_result = money(total_recovered - loan.original_principal)
+    outcome = "earnings" if economic_result > 0 else "loss" if economic_result < 0 else "break_even"
+    billed_months = max(accrual_count, 1)
+    return LoanPerformanceRead(
+        closure_reason=closure.reason if closure else LoanClosureReason(loan.status.value),
+        closed_at=closed_at,
+        contract_fulfilled=loan.status == LoanStatus.paid,
+        principal_shortfall=money(closure.principal_shortfall if closure else loan.principal_outstanding),
+        interest_shortfall=money(closure.interest_shortfall if closure else loan.accrued_interest),
+        payments_collected=payments_collected,
+        collateral_recovered=collateral_recovered,
+        total_recovered=total_recovered,
+        economic_result=economic_result,
+        economic_outcome=outcome,
+        duration_days=max((closed_at.date() - loan.start_date).days, 0),
+        billed_months=billed_months,
+        average_monthly_result=money(economic_result / billed_months),
+        late_payment_count=closure.late_payment_count if closure else 0,
+        notes=closure.notes if closure else None,
+    )
 
 
 @router.get("", response_model=list[LoanRead])
@@ -108,7 +167,111 @@ def get_loan_detail(
         total_interest_collected=interest_collected,
         total_principal_collected=principal_collected,
         total_collected=money(interest_collected + principal_collected),
+        performance=build_performance(
+            db,
+            loan,
+            money(interest_collected + principal_collected),
+            len(accruals),
+        ),
     )
+
+
+@router.post("/{loan_id}/write-off", response_model=LoanDetailRead)
+def write_off_loan(
+    loan_id: str,
+    payload: LoanWriteOffCreate,
+    tenant_id: Annotated[str, Depends(require_tenant_id)],
+    db: Annotated[Session, Depends(get_db)],
+) -> LoanDetailRead:
+    loan = get_tenant_loan(db, tenant_id, loan_id)
+    if loan.status != LoanStatus.active:
+        raise HTTPException(status_code=422, detail="Only active loans can be written off")
+    if payload.closed_at.date() < loan.start_date:
+        raise HTTPException(status_code=422, detail="Closure date cannot precede the loan date")
+
+    accrue_due_interest(db, loan, payload.closed_at.date())
+    loan.status = LoanStatus.written_off
+    loan.closed_at = payload.closed_at
+    db.add(
+        LoanClosure(
+            tenant_id=tenant_id,
+            loan_id=loan.id,
+            reason=LoanClosureReason.written_off,
+            closed_at=payload.closed_at,
+            principal_shortfall=money(loan.principal_outstanding),
+            interest_shortfall=money(loan.accrued_interest),
+            late_payment_count=payload.late_payment_count,
+            notes=payload.notes,
+        )
+    )
+    if payload.collateral_recovery_amount:
+        db.add(
+            CapitalLedgerEntry(
+                tenant_id=tenant_id,
+                entry_type=LedgerEntryType.collateral_recovery,
+                amount=money(payload.collateral_recovery_amount),
+                loan_id=loan.id,
+                occurred_at=payload.closed_at,
+                notes=payload.notes,
+            )
+        )
+    db.commit()
+    return get_loan_detail(loan.id, tenant_id, db)
+
+
+@router.post("/{loan_id}/collateral-recoveries", response_model=LoanDetailRead, status_code=status.HTTP_201_CREATED)
+def add_collateral_recovery(
+    loan_id: str,
+    payload: CollateralRecoveryCreate,
+    tenant_id: Annotated[str, Depends(require_tenant_id)],
+    db: Annotated[Session, Depends(get_db)],
+) -> LoanDetailRead:
+    loan = get_tenant_loan(db, tenant_id, loan_id)
+    if loan.status != LoanStatus.written_off:
+        raise HTTPException(status_code=422, detail="Collateral recovery requires a written-off loan")
+    db.add(
+        CapitalLedgerEntry(
+            tenant_id=tenant_id,
+            entry_type=LedgerEntryType.collateral_recovery,
+            amount=money(payload.amount),
+            loan_id=loan.id,
+            occurred_at=payload.occurred_at,
+            notes=payload.notes,
+        )
+    )
+    db.commit()
+    return get_loan_detail(loan.id, tenant_id, db)
+
+
+@router.patch("/{loan_id}/performance", response_model=LoanDetailRead)
+def update_loan_performance(
+    loan_id: str,
+    payload: LoanPerformanceUpdate,
+    tenant_id: Annotated[str, Depends(require_tenant_id)],
+    db: Annotated[Session, Depends(get_db)],
+) -> LoanDetailRead:
+    loan = get_tenant_loan(db, tenant_id, loan_id)
+    if loan.status == LoanStatus.active:
+        raise HTTPException(status_code=422, detail="Performance is only available for closed loans")
+    closure = db.scalar(
+        select(LoanClosure).where(LoanClosure.tenant_id == tenant_id, LoanClosure.loan_id == loan.id)
+    )
+    if closure is None:
+        if loan.closed_at is None:
+            raise HTTPException(status_code=422, detail="Loan has no closure date")
+        closure = LoanClosure(
+            tenant_id=tenant_id,
+            loan_id=loan.id,
+            reason=LoanClosureReason(loan.status.value),
+            closed_at=loan.closed_at,
+            principal_shortfall=money(loan.principal_outstanding),
+            interest_shortfall=money(loan.accrued_interest),
+        )
+        db.add(closure)
+    closure.late_payment_count = payload.late_payment_count
+    closure.notes = payload.notes
+    db.commit()
+    return get_loan_detail(loan.id, tenant_id, db)
 
 
 @router.get("/{loan_id}/payment-preview", response_model=PaymentPreview)
