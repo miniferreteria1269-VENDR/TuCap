@@ -1,0 +1,33 @@
+services:
+  - type: web
+    name: tucap-api
+    runtime: python
+    plan: free
+    region: virginia
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /api/health
+    autoDeployTrigger: commit
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: tucap-db
+          property: connectionString
+      - key: ENVIRONMENT
+        value: production
+      - key: PYTHON_VERSION
+        value: 3.12.13
+      - key: BOOTSTRAP_TENANT_ID
+        value: 00000000-0000-0000-0000-000000000001
+      - key: BOOTSTRAP_TENANT_NAME
+        value: TuCap Pilot
+
+databases:
+  - name: tucap-db
+    plan: free
+    region: virginia
+    databaseName: tucap
+    user: tucap_user
+    postgresMajorVersion: "17"
+    ipAllowList: []
