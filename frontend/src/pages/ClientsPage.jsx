@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 
 import { createBorrower, getBorrowers } from "../api";
 import ClientFormModal from "../components/ClientFormModal";
+import ClientDetail from "./ClientDetail";
 
 const money = new Intl.NumberFormat("es-SV", {
   style: "currency",
@@ -78,59 +79,16 @@ function ClientsPage() {
 
   if (selected) {
     return (
-      <section className="client-detail">
-        <button className="back-button" type="button" onClick={() => setSelected(null)}>← Clientes</button>
-        <div className="client-identity-card">
-          <span className="client-avatar large">{initials(selected.full_name)}</span>
-          <div>
-            <p className="eyebrow">Cliente</p>
-            <h2>{selected.full_name}</h2>
-            <p>{selected.phone || "Sin teléfono registrado"}</p>
-          </div>
-        </div>
-
-        <div className="detail-metrics">
-          <article>
-            <span>Capital pendiente</span>
-            <strong>{money.format(selected.outstanding_principal || 0)}</strong>
-          </article>
-          <article>
-            <span>Interés acumulado</span>
-            <strong>{money.format(selected.accrued_interest || 0)}</strong>
-          </article>
-          <article>
-            <span>Límite de crédito</span>
-            <strong>{money.format(selected.credit_limit || 0)}</strong>
-          </article>
-        </div>
-
-        <button className="primary-button full-action" type="button">Crear nuevo préstamo</button>
-
-        <section className="detail-section">
-          <div className="section-heading">
-            <div>
-              <p className="eyebrow">Información</p>
-              <h3>Datos del cliente</h3>
-            </div>
-          </div>
-          <dl className="contact-list">
-            <div><dt>Teléfono</dt><dd>{selected.phone || "—"}</dd></div>
-            <div><dt>Correo</dt><dd>{selected.email || "—"}</dd></div>
-            <div><dt>Identificación</dt><dd>{selected.government_id || "—"}</dd></div>
-            <div><dt>Dirección</dt><dd>{selected.address || "—"}</dd></div>
-            <div><dt>Notas</dt><dd>{selected.notes || "—"}</dd></div>
-          </dl>
-        </section>
-
-        <section className="detail-section">
-          <p className="eyebrow">Cartera</p>
-          <h3>Préstamos</h3>
-          <div className="empty-state compact">
-            <strong>Sin préstamos registrados</strong>
-            <p>Los préstamos de este cliente aparecerán aquí.</p>
-          </div>
-        </section>
-      </section>
+      <ClientDetail
+        client={selected}
+        onBack={() => setSelected(null)}
+        onClientUpdated={(updated) => {
+          setSelected(updated);
+          setClients((current) => current.map((client) => (
+            client.id === updated.id ? updated : client
+          )));
+        }}
+      />
     );
   }
 
