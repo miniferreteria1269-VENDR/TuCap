@@ -24,6 +24,10 @@ export function getBorrowers() {
   return request("/borrowers");
 }
 
+export function getBorrower(borrowerId) {
+  return request(`/borrowers/${borrowerId}`);
+}
+
 export function createBorrower(payload) {
   return request("/borrowers", {
     method: "POST",
@@ -31,3 +35,25 @@ export function createBorrower(payload) {
   });
 }
 
+export function getCapitalSummary() {
+  return request("/capital/summary");
+}
+
+export function addCapital(payload) {
+  return request("/capital/deposits", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function getLoans(borrowerId) {
+  const query = borrowerId ? `?borrower_id=${encodeURIComponent(borrowerId)}` : "";
+  return request(`/loans${query}`);
+}
+
+export function createLoan(payload) {
+  return request("/loans", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
