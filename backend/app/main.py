@@ -4,9 +4,10 @@ from fastapi.responses import RedirectResponse
 
 from .config import get_settings
 from .database import Base, SessionLocal, engine
-from .models import Tenant
-from .routers import borrowers, capital, loans
+from .models import Tenant, TenantIdentifier
+from .routers import auth, borrowers, capital, loans
 from .schemas import HealthResponse
+from .services.auth import bootstrap_pilot_user
 
 
 settings = get_settings()
@@ -20,6 +21,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(auth.router, prefix="/api")
 app.include_router(borrowers.router, prefix="/api")
 app.include_router(capital.router, prefix="/api")
 app.include_router(loans.router, prefix="/api")
@@ -31,7 +33,16 @@ def create_tables() -> None:
     with SessionLocal() as db:
         if db.get(Tenant, settings.bootstrap_tenant_id) is None:
             db.add(Tenant(id=settings.bootstrap_tenant_id, name=settings.bootstrap_tenant_name))
-            db.commit()
+            db.flush()
+        if db.get(TenantIdentifier, settings.bootstrap_tenant_id) is None:
+            db.add(
+                TenantIdentifier(
+                    tenant_id=settings.bootstrap_tenant_id,
+                    tenant_number=1,
+                )
+            )
+        bootstrap_pilot_user(db)
+        db.commit()
 
 
 @app.get("/api/health", response_model=HealthResponse)
