@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, datetime, time, timezone
 from decimal import Decimal
 from typing import Annotated
 
@@ -21,10 +21,12 @@ router = APIRouter(prefix="/loans", tags=["loans"])
 def list_loans(
     tenant_id: Annotated[str, Depends(require_tenant_id)],
     db: Annotated[Session, Depends(get_db)],
+    borrower_id: str | None = None,
 ) -> list[Loan]:
-    return list(
-        db.scalars(select(Loan).where(Loan.tenant_id == tenant_id).order_by(Loan.created_at.desc()))
-    )
+    query = select(Loan).where(Loan.tenant_id == tenant_id)
+    if borrower_id is not None:
+        query = query.where(Loan.borrower_id == borrower_id)
+    return list(db.scalars(query.order_by(Loan.created_at.desc())))
 
 
 @router.post("", response_model=LoanRead, status_code=status.HTTP_201_CREATED)
@@ -42,8 +44,8 @@ def create_loan(
     loan = Loan(
         tenant_id=tenant_id,
         principal_outstanding=payload.original_principal,
-        next_interest_date=add_month(payload.start_date),
-        **payload.model_dump(),
+        next_interest_date=payload.first_interest_date or add_month(payload.start_date),
+        **payload.model_dump(exclude={"first_interest_date"}),
     )
     db.add(loan)
     db.flush()
@@ -53,7 +55,7 @@ def create_loan(
             entry_type=LedgerEntryType.loan_disbursement,
             amount=-payload.original_principal,
             loan_id=loan.id,
-            occurred_at=loan.created_at,
+            occurred_at=datetime.combine(payload.start_date, time(12), tzinfo=timezone.utc),
         )
     )
     db.commit()
