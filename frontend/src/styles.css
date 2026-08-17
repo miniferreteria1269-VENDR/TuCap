@@ -55,12 +55,52 @@ button {
   position: relative;
 }
 
+.auth-shell {
+  min-height: 100vh;
+  padding: max(24px, env(safe-area-inset-top)) 18px max(24px, env(safe-area-inset-bottom));
+  display: grid;
+  place-items: center;
+}
+
+.auth-card {
+  width: min(100%, 430px);
+  padding: 26px 22px;
+  border: 1px solid rgba(80, 255, 154, 0.23);
+  border-radius: 24px;
+  background: linear-gradient(145deg, rgba(80, 255, 154, 0.09), transparent 42%), var(--surface);
+  box-shadow: var(--shadow);
+}
+
+.auth-brand { display: flex; align-items: center; gap: 12px; }
+.auth-brand h1, .auth-brand p, .auth-copy h2, .auth-copy p, .disclaimer-card h2, .disclaimer-copy p, .session-loader p { margin: 0; }
+.auth-brand h1 { font-size: 1.2rem; }
+.auth-brand p, .auth-copy p, .auth-security-note, .disclaimer-copy { color: var(--muted); }
+.auth-brand p { margin-top: 3px; font-size: 0.78rem; }
+.auth-logo { width: 46px; height: 46px; }
+.auth-copy { margin-top: 40px; }
+.auth-copy h2, .disclaimer-card h2 { margin-top: 7px; font-size: 2rem; letter-spacing: -0.045em; }
+.auth-copy > p:last-child { margin-top: 10px; line-height: 1.55; }
+.auth-form { margin-top: 27px; display: grid; gap: 17px; }
+.auth-submit { width: 100%; min-height: 50px; margin-top: 4px; }
+.auth-security-note { margin: 20px 0 0; text-align: center; font-size: 0.72rem; line-height: 1.45; }
+.session-loader { display: grid; justify-items: center; gap: 15px; color: var(--muted); }
+.disclaimer-card { text-align: left; }
+.disclaimer-icon { width: 48px; height: 48px; margin: 34px 0 18px; display: grid; place-items: center; border: 1px solid rgba(80, 255, 154, 0.35); border-radius: 50%; color: var(--plasma); background: var(--plasma-soft); font-family: Georgia, serif; font-size: 1.5rem; font-weight: 800; }
+.disclaimer-copy { margin: 20px 0 24px; display: grid; gap: 12px; font-size: 0.86rem; line-height: 1.55; }
+.logout-link { width: 100%; margin-top: 13px; }
+
 .top-bar {
   min-height: 84px;
   display: flex;
   align-items: center;
   justify-content: space-between;
+  position: relative;
 }
+
+.account-popover { width: min(280px, calc(100vw - 36px)); padding: 16px; position: absolute; z-index: 20; top: 68px; right: 0; display: grid; gap: 4px; border: 1px solid var(--border); border-radius: 15px; background: var(--surface-raised); box-shadow: var(--shadow); }
+.account-popover span, .account-popover small { color: var(--muted); overflow-wrap: anywhere; }
+.account-popover small { margin-top: 7px; color: var(--plasma); font-weight: 800; }
+.account-popover button { min-height: 40px; margin-top: 11px; border: 1px solid var(--border); border-radius: 10px; color: var(--text); background: var(--surface); font-weight: 750; }
 
 .brand-lockup {
   display: flex;
