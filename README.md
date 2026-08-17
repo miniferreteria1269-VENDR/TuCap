@@ -20,6 +20,9 @@ multi-tenant at the data-model level from its first release.
 - Every borrower, loan, payment, accrual, and capital-ledger record belongs to a tenant.
 - The first interest cycle is charged when the loan is disbursed; later cycles follow the next-interest date.
 - Authenticated users are assigned to one tenant, and the API derives tenant scope from the verified session.
+- Every login session must acknowledge the mathematical-tracking disclaimer.
+- Sessions expire after five minutes without an authenticated API request and are revoked immediately on logout.
+- API responses containing tenant data are marked `no-store` to prevent browser caching.
 
 ## Run the API locally
 
