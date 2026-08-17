@@ -2,9 +2,11 @@ import { useEffect, useState } from "react";
 
 import { createLoan, getBorrower, getCapitalSummary, getLoans } from "../api";
 import NewLoanModal from "../components/NewLoanModal";
+import ReceivePaymentModal from "../components/ReceivePaymentModal";
 
 const money = new Intl.NumberFormat("es-SV", { style: "currency", currency: "USD" });
 const shortDate = new Intl.DateTimeFormat("es-SV", { day: "numeric", month: "short", year: "numeric" });
+const statusLabels = { active: "Activo", paid: "Pagado", written_off: "Castigado" };
 
 function initials(name) {
   return name
@@ -25,6 +27,7 @@ function ClientDetail({ client, onBack, onClientUpdated }) {
   const [loadingLoans, setLoadingLoans] = useState(true);
   const [loanError, setLoanError] = useState("");
   const [showLoanForm, setShowLoanForm] = useState(false);
+  const [paymentLoan, setPaymentLoan] = useState(null);
 
   const refreshPortfolio = async () => {
     const [loanRows, capital, refreshedClient] = await Promise.all([
@@ -60,6 +63,12 @@ function ClientDetail({ client, onBack, onClientUpdated }) {
   const saveLoan = async (payload) => {
     await createLoan(payload);
     setShowLoanForm(false);
+    setLoanError("");
+    await refreshPortfolio();
+  };
+
+  const completePayment = async () => {
+    setPaymentLoan(null);
     setLoanError("");
     await refreshPortfolio();
   };
@@ -126,7 +135,7 @@ function ClientDetail({ client, onBack, onClientUpdated }) {
               <article className="loan-card" key={loan.id}>
                 <div className="loan-card-heading">
                   <div>
-                    <span className="status-pill">Activo</span>
+                    <span className={`status-pill ${loan.status}`}>{statusLabels[loan.status] || loan.status}</span>
                     <strong>{money.format(loan.principal_outstanding)}</strong>
                   </div>
                   <span>{Number(loan.monthly_interest_rate).toLocaleString("es-SV")}% mensual</span>
@@ -136,6 +145,11 @@ function ClientDetail({ client, onBack, onClientUpdated }) {
                   <span>Interés acumulado <strong>{money.format(loan.accrued_interest)}</strong></span>
                   <span>Próximo interés <strong>{formatDate(loan.next_interest_date)}</strong></span>
                 </div>
+                {loan.status === "active" && (
+                  <button className="receive-payment-button" type="button" onClick={() => setPaymentLoan(loan)}>
+                    Recibir pago
+                  </button>
+                )}
               </article>
             ))}
           </div>
@@ -150,9 +164,16 @@ function ClientDetail({ client, onBack, onClientUpdated }) {
           onSave={saveLoan}
         />
       )}
+      {paymentLoan && (
+        <ReceivePaymentModal
+          client={client}
+          loan={paymentLoan}
+          onClose={() => setPaymentLoan(null)}
+          onComplete={completePayment}
+        />
+      )}
     </section>
   );
 }
 
 export default ClientDetail;
-
