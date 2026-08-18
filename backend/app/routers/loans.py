@@ -10,6 +10,7 @@ from ..database import get_db
 from ..dependencies import get_current_user, require_tenant_id
 from ..models import (
     Borrower,
+    BorrowerStatus,
     CapitalLedgerEntry,
     FinancialReversal,
     InterestAccrual,
@@ -120,6 +121,11 @@ def create_loan(
     )
     if borrower is None:
         raise HTTPException(status_code=404, detail="Borrower not found")
+    if borrower.status != BorrowerStatus.active:
+        raise HTTPException(
+            status_code=409,
+            detail="El cliente debe estar activo para recibir un préstamo nuevo",
+        )
 
     loan = Loan(
         tenant_id=tenant_id,

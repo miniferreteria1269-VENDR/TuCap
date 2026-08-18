@@ -20,7 +20,7 @@ from ..models import (
     Payment,
     Tenant,
 )
-from ..schemas import BorrowerCreate, BorrowerPerformanceRead, BorrowerRead, BorrowerSummary
+from ..schemas import BorrowerCreate, BorrowerPerformanceRead, BorrowerRead, BorrowerSummary, BorrowerUpdate
 from ..services.interest import money
 
 
@@ -263,3 +263,26 @@ def create_borrower(
     db.commit()
     db.refresh(borrower)
     return borrower
+
+
+@router.patch("/{borrower_id}", response_model=BorrowerSummary)
+def update_borrower(
+    borrower_id: str,
+    payload: BorrowerUpdate,
+    tenant_id: Annotated[str, Depends(require_tenant_id)],
+    db: Annotated[Session, Depends(get_db)],
+) -> BorrowerSummary:
+    borrower = db.scalar(
+        select(Borrower).where(Borrower.id == borrower_id, Borrower.tenant_id == tenant_id)
+    )
+    if borrower is None:
+        raise HTTPException(status_code=404, detail="Cliente no encontrado")
+
+    for field, value in payload.model_dump().items():
+        setattr(borrower, field, value)
+    db.commit()
+
+    row = db.execute(
+        borrower_summary_query(tenant_id).where(Borrower.id == borrower.id)
+    ).one()
+    return serialize_summary(row)

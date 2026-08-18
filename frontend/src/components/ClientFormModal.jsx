@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-const initialForm = {
+const emptyForm = {
   full_name: "",
   phone: "",
   email: "",
@@ -8,10 +8,32 @@ const initialForm = {
   address: "",
   credit_limit: "",
   notes: "",
+  status: "active",
 };
 
-function ClientFormModal({ onClose, onSave }) {
-  const [form, setForm] = useState(initialForm);
+const statusOptions = [
+  { value: "active", label: "Activo", detail: "Puede recibir préstamos nuevos." },
+  { value: "inactive", label: "Inactivo", detail: "Pausa nuevos préstamos sin borrar su historial." },
+  { value: "blocked", label: "Bloqueado", detail: "Marca al cliente como no elegible para nuevos préstamos." },
+];
+
+function formFromClient(client) {
+  if (!client) return emptyForm;
+  return {
+    full_name: client.full_name || "",
+    phone: client.phone || "",
+    email: client.email || "",
+    government_id: client.government_id || "",
+    address: client.address || "",
+    credit_limit: client.credit_limit || "",
+    notes: client.notes || "",
+    status: client.status || "active",
+  };
+}
+
+function ClientFormModal({ client = null, onClose, onSave }) {
+  const editing = Boolean(client);
+  const [form, setForm] = useState(() => formFromClient(client));
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
@@ -30,7 +52,6 @@ function ClientFormModal({ onClose, onSave }) {
     setError("");
     try {
       await onSave({
-        ...form,
         full_name: form.full_name.trim(),
         phone: form.phone.trim() || null,
         email: form.email.trim() || null,
@@ -38,6 +59,7 @@ function ClientFormModal({ onClose, onSave }) {
         address: form.address.trim() || null,
         notes: form.notes.trim() || null,
         credit_limit: form.credit_limit || "0.00",
+        ...(editing ? { status: form.status } : {}),
       });
     } catch (saveError) {
       setError(saveError.message);
@@ -51,14 +73,14 @@ function ClientFormModal({ onClose, onSave }) {
         className="sheet-modal"
         role="dialog"
         aria-modal="true"
-        aria-labelledby="new-client-title"
+        aria-labelledby="client-form-title"
         onMouseDown={(event) => event.stopPropagation()}
       >
         <div className="sheet-handle" aria-hidden="true" />
         <div className="modal-heading">
           <div>
-            <p className="eyebrow">Personas</p>
-            <h2 id="new-client-title">Nuevo cliente</h2>
+            <p className="eyebrow">{editing ? "Perfil del cliente" : "Personas"}</p>
+            <h2 id="client-form-title">{editing ? "Editar cliente" : "Nuevo cliente"}</h2>
           </div>
           <button className="close-button" type="button" onClick={onClose} aria-label="Cerrar">×</button>
         </div>
@@ -74,6 +96,21 @@ function ClientFormModal({ onClose, onSave }) {
               value={form.full_name}
             />
           </label>
+
+          {editing && (
+            <fieldset className="borrower-status-field">
+              <legend>Estado del cliente</legend>
+              <div className="borrower-status-options">
+                {statusOptions.map((option) => (
+                  <label className={`borrower-status-option ${form.status === option.value ? "selected" : ""}`} key={option.value}>
+                    <input checked={form.status === option.value} name="borrower-status" onChange={update("status")} type="radio" value={option.value} />
+                    <span><strong>{option.label}</strong><small>{option.detail}</small></span>
+                  </label>
+                ))}
+              </div>
+              <small>Los pagos y el cierre de préstamos existentes seguirán disponibles.</small>
+            </fieldset>
+          )}
 
           <div className="form-grid">
             <label className="field">
@@ -123,7 +160,7 @@ function ClientFormModal({ onClose, onSave }) {
           <div className="modal-actions">
             <button className="cancel-button" type="button" onClick={onClose}>Cancelar</button>
             <button className="primary-button" disabled={saving} type="submit">
-              {saving ? "Guardando…" : "Guardar cliente"}
+              {saving ? "Guardando…" : editing ? "Guardar cambios" : "Guardar cliente"}
             </button>
           </div>
         </form>
@@ -133,4 +170,3 @@ function ClientFormModal({ onClose, onSave }) {
 }
 
 export default ClientFormModal;
-

@@ -37,9 +37,10 @@ function SelectionSheet({ action, borrowers, loans, loading, error, onClose, onR
   const rows = useMemo(() => {
     if (isLoan) {
       return borrowers.filter((borrower) => (
-        !normalized || [borrower.full_name, borrower.phone, borrower.government_id]
+        borrower.status === "active" && (!normalized || [borrower.full_name, borrower.phone, borrower.government_id]
           .filter(Boolean)
           .some((value) => value.toLocaleLowerCase("es").includes(normalized))
+        )
       ));
     }
     return loans.filter((loan) => {
@@ -72,9 +73,9 @@ function SelectionSheet({ action, borrowers, loans, loading, error, onClose, onR
         {error && <div className="quick-state"><strong>No pudimos cargar la información.</strong><p>{error}</p><button className="primary-button" type="button" onClick={onRetry}>Intentar de nuevo</button></div>}
         {!loading && !error && rows.length === 0 && (
           <div className="quick-state">
-            <strong>{normalized ? "No encontramos coincidencias" : isLoan ? "No hay clientes registrados" : "No hay préstamos activos"}</strong>
-            <p>{normalized ? "Prueba con otra búsqueda." : isLoan ? "Primero agrega a la persona que recibirá el préstamo." : "Registra un préstamo antes de recibir su pago."}</p>
-            {!normalized && <button className="primary-button" type="button" onClick={() => onSwitch(isLoan ? "new-client" : "new-loan")}>{isLoan ? "Nuevo cliente" : "Nuevo préstamo"}</button>}
+            <strong>{normalized ? "No encontramos coincidencias" : isLoan ? (borrowers.length ? "No hay clientes activos" : "No hay clientes registrados") : "No hay préstamos activos"}</strong>
+            <p>{normalized ? "Prueba con otra búsqueda." : isLoan ? (borrowers.length ? "Activa un cliente desde su perfil para poder prestarle." : "Primero agrega a la persona que recibirá el préstamo.") : "Registra un préstamo antes de recibir su pago."}</p>
+            {!normalized && (!isLoan || borrowers.length === 0) && <button className="primary-button" type="button" onClick={() => onSwitch(isLoan ? "new-client" : "new-loan")}>{isLoan ? "Nuevo cliente" : "Nuevo préstamo"}</button>}
           </div>
         )}
 

@@ -8,6 +8,7 @@ const money = new Intl.NumberFormat("es-SV", {
   style: "currency",
   currency: "USD",
 });
+const borrowerStatusLabels = { active: "Activo", inactive: "Inactivo", blocked: "Bloqueado" };
 
 function initials(name) {
   return name
@@ -138,7 +139,7 @@ function ClientsPage() {
             <button className="client-row" key={client.id} type="button" onClick={() => setSelected(client)}>
               <span className="client-avatar">{initials(client.full_name)}</span>
               <span className="client-main">
-                <strong>{client.full_name}</strong>
+                <span className="client-name-line"><strong>{client.full_name}</strong>{client.status !== "active" && <span className={`borrower-status-pill ${client.status}`}>{borrowerStatusLabels[client.status]}</span>}</span>
                 <small>{client.phone || "Sin teléfono"}</small>
               </span>
               <span className="client-balance">

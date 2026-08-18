@@ -17,6 +17,10 @@ class BorrowerCreate(BaseModel):
     notes: str | None = None
 
 
+class BorrowerUpdate(BorrowerCreate):
+    status: BorrowerStatus
+
+
 class BorrowerRead(BorrowerCreate):
     model_config = ConfigDict(from_attributes=True)
 

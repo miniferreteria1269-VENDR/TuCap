@@ -93,6 +93,13 @@ export function createBorrower(payload) {
   });
 }
 
+export function updateBorrower(borrowerId, payload) {
+  return request(`/borrowers/${borrowerId}`, {
+    method: "PATCH",
+    body: JSON.stringify(payload),
+  });
+}
+
 export function getCapitalSummary() {
   return request("/capital/summary");
 }

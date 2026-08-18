@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 
-import { createLoan, getBorrower, getBorrowerPerformance, getCapitalSummary, getLoans } from "../api";
+import { createLoan, getBorrower, getBorrowerPerformance, getCapitalSummary, getLoans, updateBorrower } from "../api";
+import ClientFormModal from "../components/ClientFormModal";
 import LoanDetailModal from "../components/LoanDetailModal";
 import NewLoanModal from "../components/NewLoanModal";
 import ReceivePaymentModal from "../components/ReceivePaymentModal";
@@ -8,6 +9,7 @@ import ReceivePaymentModal from "../components/ReceivePaymentModal";
 const money = new Intl.NumberFormat("es-SV", { style: "currency", currency: "USD" });
 const shortDate = new Intl.DateTimeFormat("es-SV", { day: "numeric", month: "short", year: "numeric" });
 const statusLabels = { active: "Activo", paid: "Pagado", written_off: "Castigado" };
+const borrowerStatusLabels = { active: "Activo", inactive: "Inactivo", blocked: "Bloqueado" };
 
 function initials(name) {
   return name
@@ -28,6 +30,7 @@ function ClientDetail({ client, onBack, onClientUpdated }) {
   const [loadingLoans, setLoadingLoans] = useState(true);
   const [loanError, setLoanError] = useState("");
   const [showLoanForm, setShowLoanForm] = useState(false);
+  const [showEditForm, setShowEditForm] = useState(false);
   const [paymentLoan, setPaymentLoan] = useState(null);
   const [detailLoan, setDetailLoan] = useState(null);
   const [performance, setPerformance] = useState(null);
@@ -79,16 +82,28 @@ function ClientDetail({ client, onBack, onClientUpdated }) {
     await refreshPortfolio();
   };
 
+  const saveClient = async (payload) => {
+    const updated = await updateBorrower(client.id, payload);
+    setShowEditForm(false);
+    onClientUpdated(updated);
+  };
+
+  const canCreateLoan = client.status === "active";
+
   return (
     <section className="client-detail">
       <button className="back-button" type="button" onClick={onBack}>← Clientes</button>
       <div className="client-identity-card">
         <span className="client-avatar large">{initials(client.full_name)}</span>
-        <div>
+        <div className="client-identity-main">
           <p className="eyebrow">Cliente</p>
           <h2>{client.full_name}</h2>
-          <p>{client.phone || "Sin teléfono registrado"}</p>
+          <div className="client-identity-meta">
+            <span className={`borrower-status-pill ${client.status}`}>{borrowerStatusLabels[client.status] || client.status}</span>
+            <span>{client.phone || "Sin teléfono registrado"}</span>
+          </div>
         </div>
+        <button className="edit-client-button" type="button" onClick={() => setShowEditForm(true)} aria-label="Editar cliente">Editar</button>
       </div>
 
       <div className="detail-metrics">
@@ -106,7 +121,15 @@ function ClientDetail({ client, onBack, onClientUpdated }) {
         </article>
       </div>
 
-      <button className="primary-button full-action" type="button" onClick={() => setShowLoanForm(true)}>Crear nuevo préstamo</button>
+      {canCreateLoan ? (
+        <button className="primary-button full-action" type="button" onClick={() => setShowLoanForm(true)}>Crear nuevo préstamo</button>
+      ) : (
+        <div className={`borrower-status-notice ${client.status}`}>
+          <strong>No disponible para préstamos nuevos</strong>
+          <span>{client.status === "blocked" ? "El cliente está bloqueado." : "El cliente está inactivo."} Puedes seguir cobrando y cerrando sus préstamos existentes.</span>
+          <button className="text-button" type="button" onClick={() => setShowEditForm(true)}>Cambiar estado</button>
+        </div>
+      )}
 
       {performance && performance.total_loans > 0 && (
         <section className={`borrower-performance ${performance.economic_outcome}`}>
@@ -198,6 +221,13 @@ function ClientDetail({ client, onBack, onClientUpdated }) {
           client={client}
           onClose={() => setShowLoanForm(false)}
           onSave={saveLoan}
+        />
+      )}
+      {showEditForm && (
+        <ClientFormModal
+          client={client}
+          onClose={() => setShowEditForm(false)}
+          onSave={saveClient}
         />
       )}
       {paymentLoan && (
