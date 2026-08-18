@@ -67,3 +67,14 @@ The pilot tenant and its Tenant 1 identifier are created idempotently at startup
 Render service, add `JWT_SECRET`, `BOOTSTRAP_ADMIN_EMAIL`, and `BOOTSTRAP_ADMIN_PASSWORD` manually in
 the service environment before deploying authentication. `JWT_SECRET` must contain at least 32
 characters and the bootstrap password must contain at least 12.
+
+## Keep-warm request
+
+The `Keep TuCap API warm` GitHub Actions workflow sends an unauthenticated request to
+`https://tucap-api.onrender.com/api/health` every five minutes. The endpoint reports service health
+only: it does not read tenant data, use a login session, or reset the app's five-minute user inactivity
+timer. The workflow can also be run manually from the repository's Actions tab.
+
+Keeping a free Render service continuously active consumes the workspace's included free instance
+hours. GitHub may automatically disable scheduled workflows in a public repository after 60 days
+without repository activity, so verify that the workflow remains enabled if development pauses.
