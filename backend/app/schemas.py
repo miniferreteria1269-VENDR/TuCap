@@ -233,6 +233,22 @@ class PasswordChangeResponse(BaseModel):
     sessions_revoked: bool = True
 
 
+class TenantProvisionCreate(BaseModel):
+    tenant_name: str = Field(min_length=1, max_length=160)
+    admin_full_name: str = Field(min_length=1, max_length=160)
+    admin_email: str = Field(min_length=3, max_length=254)
+    temporary_password: str = Field(min_length=12, max_length=256)
+
+
+class TenantProvisionRead(BaseModel):
+    tenant_id: str
+    tenant_number: int
+    tenant_name: str
+    user_id: str
+    admin_full_name: str
+    admin_email: str
+
+
 class DisclaimerAcceptance(BaseModel):
     accepted: bool
 

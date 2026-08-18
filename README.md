@@ -39,6 +39,11 @@ API documentation will be available at `http://localhost:8000/docs`. Configure t
 administrator values shown in `backend/.env.example` before first login. The pilot database is Tenant 1;
 future provisioned databases receive Tenant 2 and higher while retaining UUID boundaries internally.
 
+New tenants are created without public signup through `POST /api/admin/tenants`. The route requires an
+authenticated bootstrap administrator whose email and Tenant 1 identifier match the private environment
+configuration. It creates an isolated tenant and its first user with a temporary password; the new user
+should immediately replace that password from **Más → Cambiar contraseña**.
+
 ## Run the interface locally
 
 ```bash

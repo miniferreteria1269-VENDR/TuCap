@@ -5,7 +5,7 @@ from fastapi.responses import RedirectResponse
 from .config import get_settings
 from .database import Base, SessionLocal, engine
 from .models import Tenant, TenantIdentifier
-from .routers import auth, borrowers, capital, loans
+from .routers import admin, auth, borrowers, capital, loans
 from .schemas import HealthResponse
 from .services.auth import bootstrap_pilot_user
 
@@ -31,6 +31,7 @@ app.add_middleware(
 )
 
 app.include_router(auth.router, prefix="/api")
+app.include_router(admin.router, prefix="/api")
 app.include_router(borrowers.router, prefix="/api")
 app.include_router(capital.router, prefix="/api")
 app.include_router(loans.router, prefix="/api")
