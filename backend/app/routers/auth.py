@@ -2,13 +2,28 @@ from datetime import datetime, timezone
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from ..database import get_db
 from ..dependencies import CurrentSession, get_current_session
 from ..models import AuthSession, User
-from ..schemas import AuthUserRead, DisclaimerAcceptance, LoginRequest, LoginResponse
-from ..services.auth import authenticate_user, create_access_token, create_auth_session, tenant_number_for
+from ..schemas import (
+    AuthUserRead,
+    DisclaimerAcceptance,
+    LoginRequest,
+    LoginResponse,
+    PasswordChangeRequest,
+    PasswordChangeResponse,
+)
+from ..services.auth import (
+    authenticate_user,
+    create_access_token,
+    create_auth_session,
+    hash_password,
+    tenant_number_for,
+    verify_password,
+)
 
 
 router = APIRouter(prefix="/auth", tags=["authentication"])
@@ -70,3 +85,29 @@ def logout(
     current.session.revoked_at = datetime.now(timezone.utc)
     db.commit()
     return {"logged_out": True}
+
+
+@router.post("/change-password", response_model=PasswordChangeResponse)
+def change_password(
+    payload: PasswordChangeRequest,
+    current: Annotated[CurrentSession, Depends(get_current_session)],
+    db: Annotated[Session, Depends(get_db)],
+) -> PasswordChangeResponse:
+    if not verify_password(payload.current_password, current.user.password_hash):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="La contraseña actual es incorrecta",
+        )
+    if verify_password(payload.new_password, current.user.password_hash):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="La contraseña nueva debe ser diferente a la actual",
+        )
+
+    now = datetime.now(timezone.utc)
+    current.user.password_hash = hash_password(payload.new_password)
+    sessions = db.scalars(select(AuthSession).where(AuthSession.user_id == current.user.id))
+    for session in sessions:
+        session.revoked_at = now
+    db.commit()
+    return PasswordChangeResponse()

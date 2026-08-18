@@ -1,8 +1,64 @@
 import { useEffect, useState } from "react";
 
-import { getCapitalSummary } from "../api";
+import { changePassword, getCapitalSummary } from "../api";
 
 const currency = new Intl.NumberFormat("es-SV", { style: "currency", currency: "USD" });
+
+function PasswordChangeSheet({ onClose, onPasswordChanged }) {
+  const [form, setForm] = useState({ current_password: "", new_password: "", confirm_password: "" });
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+
+  const update = (field) => (event) => {
+    setForm((current) => ({ ...current, [field]: event.target.value }));
+  };
+
+  const submit = async (event) => {
+    event.preventDefault();
+    if (form.new_password.length < 12) {
+      setError("La contraseña nueva debe contener al menos 12 caracteres.");
+      return;
+    }
+    if (form.new_password !== form.confirm_password) {
+      setError("La confirmación no coincide con la contraseña nueva.");
+      return;
+    }
+    if (form.current_password === form.new_password) {
+      setError("La contraseña nueva debe ser diferente a la actual.");
+      return;
+    }
+
+    setSaving(true);
+    setError("");
+    try {
+      await changePassword({
+        current_password: form.current_password,
+        new_password: form.new_password,
+      });
+      onPasswordChanged();
+    } catch (saveError) {
+      setError(saveError.message);
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="modal-backdrop" role="presentation" onMouseDown={onClose}>
+      <section className="sheet-modal compact-sheet information-sheet" role="dialog" aria-modal="true" aria-labelledby="password-title" onMouseDown={(event) => event.stopPropagation()}>
+        <div className="sheet-handle" aria-hidden="true" />
+        <div className="modal-heading"><div><p className="eyebrow">Cuenta y seguridad</p><h2 id="password-title">Cambiar contraseña</h2></div><button className="close-button" type="button" onClick={onClose} aria-label="Cerrar">×</button></div>
+        <form className="client-form password-change-form" onSubmit={submit}>
+          <label className="field full-width"><span>Contraseña actual</span><input autoComplete="current-password" autoFocus maxLength="256" onChange={update("current_password")} required type="password" value={form.current_password} /></label>
+          <label className="field full-width"><span>Contraseña nueva</span><input autoComplete="new-password" maxLength="256" minLength="12" onChange={update("new_password")} required type="password" value={form.new_password} /><small>Mínimo 12 caracteres.</small></label>
+          <label className="field full-width"><span>Confirmar contraseña nueva</span><input autoComplete="new-password" maxLength="256" minLength="12" onChange={update("confirm_password")} required type="password" value={form.confirm_password} /></label>
+          <p className="password-security-note">Al guardar, TuCap cerrará todas las sesiones abiertas. Deberás ingresar nuevamente con la contraseña nueva.</p>
+          {error && <p className="form-error" role="alert">{error}</p>}
+          <div className="modal-actions"><button className="cancel-button" type="button" onClick={onClose}>Cancelar</button><button className="primary-button" disabled={saving} type="submit">{saving ? "Actualizando…" : "Cambiar contraseña"}</button></div>
+        </form>
+      </section>
+    </div>
+  );
+}
 
 function InformationSheet({ type, user, onClose, onLogout }) {
   const [loggingOut, setLoggingOut] = useState(false);
@@ -58,7 +114,7 @@ function InformationSheet({ type, user, onClose, onLogout }) {
   );
 }
 
-function MorePage({ user, onQuickAction, onOpenDashboard, onLogout }) {
+function MorePage({ user, onQuickAction, onOpenDashboard, onLogout, onPasswordChanged }) {
   const [capitalOnHand, setCapitalOnHand] = useState(null);
   const [capitalError, setCapitalError] = useState("");
   const [sheet, setSheet] = useState(null);
@@ -96,6 +152,7 @@ function MorePage({ user, onQuickAction, onOpenDashboard, onLogout }) {
         <p className="more-section-label">Cuenta</p>
         <div className="more-menu-list">
           <button className="more-menu-row" type="button" onClick={() => setSheet("security")}><span className="more-menu-icon">⌾</span><span><strong>Cuenta y seguridad</strong><small>Usuario, espacio de trabajo y bloqueo automático</small></span><span className="row-chevron" aria-hidden="true">›</span></button>
+          <button className="more-menu-row" type="button" onClick={() => setSheet("password")}><span className="more-menu-icon">✱</span><span><strong>Cambiar contraseña</strong><small>Actualiza tu clave y cierra las demás sesiones</small></span><span className="row-chevron" aria-hidden="true">›</span></button>
           <button className="more-menu-row" type="button" onClick={() => setSheet("legal")}><span className="more-menu-icon">i</span><span><strong>Aviso legal</strong><small>Alcance y responsabilidad de la plataforma</small></span><span className="row-chevron" aria-hidden="true">›</span></button>
         </div>
       </section>
@@ -103,7 +160,8 @@ function MorePage({ user, onQuickAction, onOpenDashboard, onLogout }) {
       <button className="more-logout-button" type="button" onClick={() => setSheet("logout")}><span>⇥</span>Cerrar sesión</button>
       <p className="more-footer">TuCap · Herramienta privada de control de cartera</p>
 
-      {sheet && <InformationSheet type={sheet} user={user} onClose={() => setSheet(null)} onLogout={onLogout} />}
+      {sheet === "password" && <PasswordChangeSheet onClose={() => setSheet(null)} onPasswordChanged={onPasswordChanged} />}
+      {sheet && sheet !== "password" && <InformationSheet type={sheet} user={user} onClose={() => setSheet(null)} onLogout={onLogout} />}
     </section>
   );
 }

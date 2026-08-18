@@ -9,6 +9,8 @@ from sqlalchemy.orm import Session
 
 from app.dependencies import CurrentSession, require_tenant_id
 from app.models import AuthSession, Tenant, TenantIdentifier, User
+from app.routers.auth import change_password
+from app.schemas import PasswordChangeRequest
 from app.services import auth
 from app.services.auth import (
     TokenClaims,
@@ -30,6 +32,118 @@ def test_passwords_are_hashed_and_verified() -> None:
     assert hashed != "correct horse battery staple"
     assert verify_password("correct horse battery staple", hashed)
     assert not verify_password("wrong password", hashed)
+
+
+def test_change_password_rehashes_password_and_revokes_every_session() -> None:
+    engine = create_engine("sqlite:///:memory:")
+    Base.metadata.create_all(engine)
+    with Session(engine) as db:
+        tenant = Tenant(name="Password tenant")
+        db.add(tenant)
+        db.flush()
+        user = User(
+            tenant_id=tenant.id,
+            email="owner@example.com",
+            email_normalized="owner@example.com",
+            full_name="Owner",
+            password_hash=hash_password("temporary-password"),
+        )
+        db.add(user)
+        db.flush()
+        current_session = AuthSession(
+            user_id=user.id,
+            expires_at=datetime.now(timezone.utc) + timedelta(hours=1),
+        )
+        other_session = AuthSession(
+            user_id=user.id,
+            expires_at=datetime.now(timezone.utc) + timedelta(hours=1),
+        )
+        other_user = User(
+            tenant_id=tenant.id,
+            email="other@example.com",
+            email_normalized="other@example.com",
+            full_name="Other user",
+            password_hash=hash_password("another-private-password"),
+        )
+        db.add(other_user)
+        db.flush()
+        unrelated_session = AuthSession(
+            user_id=other_user.id,
+            expires_at=datetime.now(timezone.utc) + timedelta(hours=1),
+        )
+        db.add_all([current_session, other_session, unrelated_session])
+        db.commit()
+
+        result = change_password(
+            PasswordChangeRequest(
+                current_password="temporary-password",
+                new_password="a-new-private-password",
+            ),
+            CurrentSession(user=user, session=current_session),
+            db,
+        )
+
+        assert result.password_changed
+        assert result.sessions_revoked
+        assert verify_password("a-new-private-password", user.password_hash)
+        assert not verify_password("temporary-password", user.password_hash)
+        db.refresh(current_session)
+        db.refresh(other_session)
+        db.refresh(unrelated_session)
+        assert current_session.revoked_at is not None
+        assert other_session.revoked_at is not None
+        assert unrelated_session.revoked_at is None
+
+
+@pytest.mark.parametrize(
+    ("current_password", "new_password", "expected_detail"),
+    [
+        ("incorrect-password", "a-new-private-password", "La contraseña actual es incorrecta"),
+        ("temporary-password", "temporary-password", "La contraseña nueva debe ser diferente a la actual"),
+    ],
+)
+def test_change_password_rejects_invalid_current_or_reused_password(
+    current_password: str,
+    new_password: str,
+    expected_detail: str,
+) -> None:
+    engine = create_engine("sqlite:///:memory:")
+    Base.metadata.create_all(engine)
+    with Session(engine) as db:
+        tenant = Tenant(name="Password tenant")
+        db.add(tenant)
+        db.flush()
+        user = User(
+            tenant_id=tenant.id,
+            email="owner@example.com",
+            email_normalized="owner@example.com",
+            full_name="Owner",
+            password_hash=hash_password("temporary-password"),
+        )
+        db.add(user)
+        db.flush()
+        session = AuthSession(
+            user_id=user.id,
+            expires_at=datetime.now(timezone.utc) + timedelta(hours=1),
+        )
+        db.add(session)
+        db.commit()
+
+        with pytest.raises(HTTPException) as error:
+            change_password(
+                PasswordChangeRequest(
+                    current_password=current_password,
+                    new_password=new_password,
+                ),
+                CurrentSession(user=user, session=session),
+                db,
+            )
+
+        assert error.value.status_code == 400
+        assert error.value.detail == expected_detail
+        assert verify_password("temporary-password", user.password_hash)
+        db.refresh(session)
+        assert session.revoked_at is None
 
 
 def test_access_token_round_trip(monkeypatch: pytest.MonkeyPatch) -> None:

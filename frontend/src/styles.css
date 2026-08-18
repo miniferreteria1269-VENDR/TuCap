@@ -2865,6 +2865,21 @@ button {
   margin: 13px 1px;
 }
 
+.password-change-form {
+  margin-top: 18px;
+}
+
+.password-security-note {
+  margin: 0 0 15px;
+  padding: 11px 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  color: var(--muted);
+  background: var(--surface-soft);
+  font-size: 0.68rem;
+  line-height: 1.45;
+}
+
 .app-version {
   margin-bottom: 16px;
   padding: 11px 12px;

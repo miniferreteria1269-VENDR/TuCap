@@ -156,7 +156,7 @@ function App() {
         {activePage === "dashboard" && <Dashboard focusTarget={dashboardFocus} key={`dashboard-${dataVersion}`} />}
         {activePage === "borrowers" && <ClientsPage key={`borrowers-${dataVersion}`} />}
         {activePage === "loans" && <LoansPage key={`loans-${dataVersion}`} onNewLoan={() => setQuickAction("new-loan")} />}
-        {activePage === "more" && <MorePage key={`more-${dataVersion}`} onLogout={logout} onOpenDashboard={openDashboardSection} onQuickAction={setQuickAction} user={user} />}
+        {activePage === "more" && <MorePage key={`more-${dataVersion}`} onLogout={logout} onOpenDashboard={openDashboardSection} onPasswordChanged={() => lockSession("Contraseña actualizada. Ingresa nuevamente con tu nueva contraseña.")} onQuickAction={setQuickAction} user={user} />}
       </main>
 
       {actionNotice && <div className="action-toast" role="status">✓ {actionNotice}</div>}

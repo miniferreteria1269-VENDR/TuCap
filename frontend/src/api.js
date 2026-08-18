@@ -74,6 +74,13 @@ export function revokeSession() {
   return request("/auth/logout", { method: "POST" });
 }
 
+export function changePassword(payload) {
+  return request("/auth/change-password", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
 export function getBorrowers() {
   return request("/borrowers");
 }
